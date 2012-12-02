@@ -4,7 +4,9 @@
 #define _CRT_SECURE_NO_DEPRECATE
 
 #include <stdio.h>
+#include <malloc.h>
 #include "vector3d.h"
+#include "coord_system.h"
 
 
 class Grid {
@@ -29,9 +31,17 @@ public:
 
 class Circle {
 public:
-	vector3d<float> center;
+	CoordinateSystem<float> XYZ;
+	float radius;
 };
 
+class Arc {
+public:
+	CoordinateSystem<float> XYZ;
+	float radius;
+	float fmin;
+	float fmax;
+};
 
 template <typename T> class myVector {
 	myVector(myVector &x); //deactivated copy-constructor
@@ -77,37 +87,6 @@ public:
 };
 
 
-template <typename T> class myStack {
-	T *data;
-	int datalen,datamem;
-	myStack(myStack &x);
-public:
-	myStack() {
-		data=(T *)malloc(sizeof(double));
-		datalen=0; datamem=1;
-	}
-	~myStack() {
-		free(data);
-	}
-	void push(const T *val) {
-		if (datalen==datamem) {
-			datamem*=2; 
-			data=(T *)realloc(data,datamem*sizeof(double));
-		}
-		memcpy(&data[datalen],val,sizeof(T));
-		datalen++;
-	}
-	int pop(T *val) {
-		if (datalen==0) return 0;
-		datalen--;
-		memcpy(val,&data[datalen],sizeof(T));
-		return 1;
-	}
-
-	void clear() {
-		datalen=0;
-	}
-};
 
 class Geometry 
 {
@@ -118,6 +97,8 @@ public:
 	myVector<Line> lines;
 	myVector<Triangle> triangles;
 	myVector<Line> edges;
+	myVector<Circle> circles;
+	myVector<Arc> arcs;
 
 	int pickedGrid;
 
@@ -133,6 +114,8 @@ public:
 	int addLine(int n1,int n2); 
 	int addEdge(int n1,int n2);
 	int addTriangle(int n1,int n2,int n3,float normal[3]);
+	int addCircle(const CoordinateSystem<float> XYZ,float radius);
+	int addArc(const CoordinateSystem<float> XYZ,float radius,float fmin,float fmax);
 	
 	void shrinkGeometry();
 	void compressGrids();
@@ -148,6 +131,9 @@ public:
 
 	void translateGeometry(float mat[4][4]);
 
+	float edgeStripColor[4];
+	float lineStripColor[4];
+
 	int *edgeStrip;
 	int *lineStrip;
 	int *triaStripVertex;
@@ -156,6 +142,12 @@ public:
 	void makeEdgeStrip();
 	void makeLineStrip();
 	void makeTriaStrip();
+
+	void drawEdgeStrip();
+	void drawLineStrip();
+
+	void drawCircles();
+	void drawArcs();
 };
 
 

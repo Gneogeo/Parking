@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <qdebug.h>
 
-char *chunckName(unsigned short int id)
+const char *chunckName(unsigned short int id)
 {
 	switch (id) {
 		case 0x4D4D: return "Main chunck";
@@ -36,7 +36,7 @@ int readChunck(FILE *fp,Geometry *geom)
 	fread((void *)&chunck_id,sizeof(short int),1,fp);
 	fread((void *)&chunck_len,sizeof(long int),1,fp);
 	
-	char *chName=chunckName(chunck_id);
+        const char *chName=chunckName(chunck_id);
 
 
 	//qDebug("Chunck %x: len :%d (%s)",chunck_id,chunck_len,chName);

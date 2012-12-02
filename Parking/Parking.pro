@@ -19,6 +19,7 @@ SOURCES += chunck3ds_reader.cpp  \
 	   stl_reader.cpp
 
 HEADERS  += chunck3ds_reader.h  \
+	    coord_system.h \
 	    dxf_reader.h  \
 	    geometry.h  \
 	    mgl.h  \

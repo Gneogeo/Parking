@@ -1,7 +1,9 @@
 #define WIN32_LEAN_AND_MEAN
 #include <QtGui>
 #include <QtOpenGL>
-#include <gl/GLU.h>
+
+
+#include <GL/glu.h>
 
 #include <math.h>
 #include "mgl.h"
@@ -251,21 +253,12 @@ void GLWidget::keyPressEvent(QKeyEvent *event)
 
 float pmat02,pmat12,pmat22;
 
-void Normalize(float X[3])
-{
-	float s=sqrt(X[0]*X[0]+X[1]*X[1]+X[2]*X[2]);
-	if (s!=0) {
-		X[0]/=s;
-		X[1]/=s;
-		X[2]/=s;
-	}
-}
-
 
 
 void drawRectangle(float x1,float y1,float z1,float x2,float y2,float z2,float x3,float y3,float z3,float x4,float y4,float z4)
 {
 	float norm[3];
+
 	norm[0]=(y1-y3)*(z2-z4)-(z1-z3)*(y2-y4);
 	norm[1]=(z1-z3)*(x2-x4)-(x1-x3)*(z2-z4);
 	norm[2]=(x1-x3)*(y2-y4)-(y1-y3)*(x2-x4);
@@ -274,7 +267,7 @@ void drawRectangle(float x1,float y1,float z1,float x2,float y2,float z2,float x
 		norm[1]=-norm[1];
 		norm[2]=-norm[2];
 	}
-	Normalize(norm);
+	vec_normalize(norm);
 	float vert[3];
 
 	glBegin(GL_QUADS);
@@ -539,88 +532,18 @@ void GLWidget::paintGL()
 
 		glDisable(GL_LIGHTING);
 
-				
+		
+		/*The lines should be a bit closer to viewer*/
 		glMatrixMode (GL_MODELVIEW);
 		glPushMatrix();
 		glTranslatef(pmat02*5e-3*zoom,pmat12*5e-3*zoom,pmat22*5e-3*zoom);
-		glColor3f(0,0,0);
-		
-		if (!geom->lineStrip) {
-			
-			glBegin(GL_LINES);
-			for (k=0; k<geom->lines.length(); k++) {
-				glVertex3fv(geom->grids.at(geom->lines.at(k).node[0]).coords);
-				glVertex3fv(geom->grids.at(geom->lines.at(k).node[1]).coords);
-			}
-			glEnd();
-		} else {
-			int *ar,totta;
-			ar=geom->lineStrip;
-#if 0
-			
 
-			while (ar[0]) {
-				totta=ar[0]; ar++;
-				glBegin(GL_LINE_STRIP);
-				for (k=0; k<totta; k++) {
-					glVertex3fv(geom->grids.data[ar[k]].coords);
-				}
-				glEnd();
-				ar+=totta;
-			}
-#else
-			glEnableClientState(GL_VERTEX_ARRAY);
-			glVertexPointer(3,GL_FLOAT,sizeof(Grid),&geom->grids.data[0].coords);
-			
-			
 
-			while (ar[0]) {
-				totta=ar[0]; ar++;
-				glDrawElements(GL_LINE_STRIP,totta,GL_UNSIGNED_INT,ar);
-				ar+=totta;
-			}
-			
-			glDisableClientState(GL_VERTEX_ARRAY);
-#endif
-		}
+		geom->drawEdgeStrip();
+		geom->drawLineStrip();
+		geom->drawCircles();
+		geom->drawArcs();
 
-		if (!geom->edgeStrip) {
-			glBegin(GL_LINES);
-			for (k=0; k<geom->edges.length(); k++) {
-				glVertex3fv(geom->grids.at(geom->edges.at(k).node[0]).coords);
-				glVertex3fv(geom->grids.at(geom->edges.at(k).node[1]).coords);
-			}
-			glEnd();
-		} else {
-			int *ar,totta;
-			ar=geom->edgeStrip;
-#if 0
-			
-
-			while (ar[0]) {
-				totta=ar[0]; ar++;
-				glBegin(GL_LINE_STRIP);
-				for (k=0; k<totta; k++) {
-					glVertex3fv(geom->grids.data[ar[k]].coords);
-				}
-				glEnd();
-				ar+=totta;
-			}
-#else
-			glEnableClientState(GL_VERTEX_ARRAY);
-			glVertexPointer(3,GL_FLOAT,sizeof(Grid),&geom->grids.data[0].coords);
-			
-			while (ar[0]) {
-				totta=ar[0]; ar++;
-				glDrawElements(GL_LINE_STRIP,totta,GL_UNSIGNED_INT,ar);
-				ar+=totta;
-			}
-			
-			glDisableClientState(GL_VERTEX_ARRAY);
-
-#endif
-		}
-		
 
 		glPointSize(4);
 		glBegin(GL_POINTS);

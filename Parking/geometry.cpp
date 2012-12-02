@@ -5,6 +5,8 @@
 #include "chunck3ds_reader.h"
 #include <qdebug.h>
 
+#include <GL/glu.h>
+
 using namespace std;
 
 #include <set>
@@ -22,6 +24,16 @@ Geometry::Geometry()
 	triaStripVertex=NULL;
 	triaStripElement=NULL;
 
+	edgeStripColor[0]=0;
+	edgeStripColor[1]=0;
+	edgeStripColor[2]=0;
+	edgeStripColor[3]=0;
+
+	lineStripColor[0]=0;
+	lineStripColor[1]=0;
+	lineStripColor[2]=0;
+	lineStripColor[3]=0;
+
 
 }
 
@@ -29,6 +41,7 @@ Geometry::Geometry()
 Geometry::~Geometry()
 {
 	free(edgeStrip);
+	free(lineStrip);
 }
 
 
@@ -102,6 +115,27 @@ int Geometry::addTriangle(int n1,int n2,int n3,float norm[3])
 
 	return triangles.length()-1;
 }
+
+int Geometry::addCircle(const CoordinateSystem<float> XYZ,float radius)
+{
+	Circle T;
+	T.XYZ=XYZ;
+	T.radius=radius;
+	circles.append(T);
+	return circles.length()-1;
+}
+
+int Geometry::addArc(const CoordinateSystem<float> XYZ,float radius,float fmin,float fmax)
+{
+	Arc T;
+	T.XYZ=XYZ;
+	T.radius=radius;
+	T.fmin=fmin;
+	T.fmax=fmax;
+	arcs.append(T);
+	return arcs.length()-1;
+}
+
 
 void Geometry::calcTrianglesNormals()
 {
@@ -888,3 +922,161 @@ void Geometry::makeTriaStrip()
 
 	qDebug("Time to triangle strip: %f msec",(clock()-t)/(CLOCKS_PER_SEC/1000.));
 }
+
+
+void Geometry::drawEdgeStrip()
+{
+
+	glColor4fv(edgeStripColor);
+
+	if (!edgeStrip) {
+		int k;
+		glBegin(GL_LINES);
+		for (k=0; k<edges.length(); k++) {
+			glVertex3fv(grids.at(edges.at(k).node[0]).coords);
+			glVertex3fv(grids.at(edges.at(k).node[1]).coords);
+		}
+		glEnd();
+	} else {
+		int *ar,totta;
+		ar=edgeStrip;
+#if 0
+
+
+		while (ar[0]) {
+			totta=ar[0]; ar++;
+			glBegin(GL_LINE_STRIP);
+			for (k=0; k<totta; k++) {
+				glVertex3fv(grids.data[ar[k]].coords);
+			}
+			glEnd();
+			ar+=totta;
+		}
+#else
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glVertexPointer(3,GL_FLOAT,sizeof(Grid),&grids.data[0].coords);
+
+		while (ar[0]) {
+			totta=ar[0]; ar++;
+			glDrawElements(GL_LINE_STRIP,totta,GL_UNSIGNED_INT,ar);
+			ar+=totta;
+		}
+
+		glDisableClientState(GL_VERTEX_ARRAY);
+
+#endif
+	}
+
+}
+
+void Geometry::drawLineStrip()
+{
+	glColor4fv(lineStripColor);
+
+	if (!lineStrip) {
+		int k;
+
+		glBegin(GL_LINES);
+		for (k=0; k<lines.length(); k++) {
+			glVertex3fv(grids.at(lines.at(k).node[0]).coords);
+			glVertex3fv(grids.at(lines.at(k).node[1]).coords);
+		}
+		glEnd();
+	} else {
+		int *ar,totta;
+		ar=lineStrip;
+#if 0
+
+
+		while (ar[0]) {
+			totta=ar[0]; ar++;
+			glBegin(GL_LINE_STRIP);
+			for (k=0; k<totta; k++) {
+				glVertex3fv(grids.data[ar[k]].coords);
+			}
+			glEnd();
+			ar+=totta;
+		}
+#else
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glVertexPointer(3,GL_FLOAT,sizeof(Grid),&grids.data[0].coords);
+
+
+
+		while (ar[0]) {
+			totta=ar[0]; ar++;
+			glDrawElements(GL_LINE_STRIP,totta,GL_UNSIGNED_INT,ar);
+			ar+=totta;
+		}
+
+		glDisableClientState(GL_VERTEX_ARRAY);
+#endif
+	}
+
+
+}
+
+
+void Geometry::drawCircles()
+{
+	glColor4fv(lineStripColor);
+
+	
+	int i;
+	float f;
+	float X0[3];
+	float X[3];
+	float fmin,fmax;
+	float df;
+	fmin=0; fmax=2*3.14159;
+	df=fmax/50.;
+	for (i=0; i<circles.length(); i++) {
+		const Circle & C=circles.at(i);
+		glBegin(GL_LINE_LOOP);
+		for (f=fmin; f<fmax; f+=df) {
+			X0[0]=C.radius*cos(f);
+			X0[1]=C.radius*sin(f);
+			X0[2]=0;
+			C.XYZ.fromLocalToGlobal(X,X0);
+			glVertex3fv(X);
+		}
+		glEnd();
+	}
+
+}
+
+void Geometry::drawArcs()
+{
+	glColor4fv(lineStripColor);
+
+	int i;
+	float f;
+	float X0[3];
+	float X[3];
+	float df;
+	df=(2*3.14159)/50.;
+	for (i=0; i<arcs.length(); i++) {
+		const Arc & C=arcs.at(i);
+		glBegin(GL_LINE_STRIP);
+		
+		for (f=C.fmin; f<C.fmax; f+=df) {
+			X0[0]=C.radius*cos(f);
+			X0[1]=C.radius*sin(f);
+			X0[2]=0;
+			C.XYZ.fromLocalToGlobal(X,X0);
+			glVertex3fv(X);
+		}
+		f=C.fmax;
+		X0[0]=C.radius*cos(f);
+		X0[1]=C.radius*sin(f);
+		X0[2]=0;
+		C.XYZ.fromLocalToGlobal(X,X0);
+		glVertex3fv(X);
+		glEnd();
+	}
+
+}
+
+
+
+

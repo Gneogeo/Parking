@@ -1,7 +1,9 @@
 #include "dxf_reader.h"
 
 #include <stdlib.h>
+#include <math.h>
 #include "geometry.h"
+#include "coord_system.h"
 
 #include <stdio.h>
 #include <qdebug.h>
@@ -26,42 +28,97 @@ static void readData(int *code,char *data,FILE *fp)
 	fgets(data,1024,fp);
 }
 
-static void extrudePoint(double x[3],double Z[3])
+static void createObjectCoordSystem(CoordinateSystem<double> *pXYZ,const double Z[3])
 {
+	static const double cc=1./64.;
 	double X[3],Y[3];
-	static double cc=1./64.;
 
-	if (Z[0]==0 && Z[1]==0 && Z[2]>=0) return; /*The coordinate system is WCS*/
-	
-
-	if (Z[0]>-cc && Z[0]<cc && Z[1]>-cc && Z[1]<cc) {
+	if (Z[0]==0 && Z[1]==0 && Z[2]>=0) {
+		X[0]=1; X[1]=0; X[2]=0;
+		Y[0]=0; Y[1]=1; Y[2]=0;
+	} else if (Z[0]>-cc && Z[0]<cc && Z[1]>-cc && Z[1]<cc) {
 		/*X= [0 1 0] x Z*/
 		X[0]=Z[2]; X[1]=0; X[2]=-Z[0];
 	} else {
 		/*X= [0 0 1] x Z*/
 		X[0]=-Z[1]; X[1]=Z[0]; X[2]=0;
 	}
-	Y[0]=Z[1]*X[2]-X[1]*Z[2];
-	Y[1]=Z[2]*X[0]-X[2]*Z[0];
-	Y[2]=Z[0]*X[1]-X[0]*Z[1];
-
-	double s;
-	s=sqrt(X[0]*X[0]+X[1]*X[1]+X[2]*X[2]);
-	X[0]/=s; X[1]/=s; X[2]/=s;
-	s=sqrt(Y[0]*Y[0]+Y[1]*Y[1]+Y[2]*Y[2]);
-	Y[0]/=s; Y[1]/=s; Y[2]/=s;
-	s=sqrt(Z[0]*Z[0]+Z[1]*Z[1]+Z[2]*Z[2]);
-	Z[0]/=s; Z[1]/=s; Z[2]/=s;
-	
-
-	double nX[3];
-	nX[0]=X[0]*x[0]+X[1]*x[1]+X[2]*x[2];
-	nX[1]=Y[0]*x[0]+Y[1]*x[1]+Y[2]*x[2];
-	nX[2]=Z[0]*x[0]+Z[1]*x[1]+Z[2]*x[2];
-
-	x[0]=nX[0]; x[1]=nX[1]; x[2]=nX[2];
+	vec_cross_product(Y,Z,X);
+	pXYZ->setGlobal();
+	pXYZ->setAxis(X,Y,Z);
 
 }
+
+static void createObjectCoordSystem(CoordinateSystem<float> *pXYZ,const float Z[3])
+{
+	static const double cc=1./64.;
+	float X[3],Y[3];
+
+	if (Z[0]==0 && Z[1]==0 && Z[2]>=0) {
+		X[0]=1; X[1]=0; X[2]=0;
+		Y[0]=0; Y[1]=1; Y[2]=0;
+	} else if (Z[0]>-cc && Z[0]<cc && Z[1]>-cc && Z[1]<cc) {
+		/*X= [0 1 0] x Z*/
+		X[0]=Z[2]; X[1]=0; X[2]=-Z[0];
+	} else {
+		/*X= [0 0 1] x Z*/
+		X[0]=-Z[1]; X[1]=Z[0]; X[2]=0;
+	}
+	vec_cross_product(Y,Z,X);
+	pXYZ->setGlobal();
+	pXYZ->setAxis(X,Y,Z);
+
+}
+
+
+static void extrudePoint(double X[3],const double Z[3])
+{
+	if (Z[0]==0 && Z[1]==0 && Z[2]>=0) return; /*The coordinate system is WCS*/
+
+	CoordinateSystem<double> XYZ;
+	createObjectCoordSystem(&XYZ,Z);
+
+	double nX[3];
+	XYZ.fromLocalToGlobal(nX,X);
+
+	vec_copy(X,nX);
+}
+
+
+template <typename T> class myStack {
+	T *data;
+	int datalen;
+	int datamem;
+	myStack(myStack &x);
+	public:
+	myStack() {
+		data=(T *)malloc(1*sizeof(T));
+		datalen=0; datamem=1;
+	}
+	~myStack() {
+		free(data);
+	}
+	void push(const T *val) {
+		if (datalen==datamem) {
+			datamem*=2;
+			data=(T *)realloc(data,datamem*sizeof(double));
+		}
+		memcpy(&data[datalen],val,sizeof(T));
+		datalen++;
+	}
+	int pop(T *val) {
+		if (datalen==0) return 0;
+		datalen--;
+		memcpy(val,&data[datalen],sizeof(T));
+		return 1;
+	}
+
+	void clear() {
+		datalen=0;
+	}
+};
+
+
 
 void readDXF(Geometry *geom,const char *name)
 {
@@ -220,88 +277,97 @@ void readDXF(Geometry *geom,const char *name)
 						break;
 					case ENT_CIRCLE:
 						{
-							double x0[3];
+							double x0_d[3];
 							double x[3];
 
-							double r;
-							double Z[3];
+							double r_d;
+							double Z_d[3];
+
+							float Z[3];
+							float x0[3];
+							float r;
+
 							int k,n;
 							codeInt[90].pop(&n);
-							if (codeDouble[210].pop(&Z[0])) {
-								codeDouble[220].pop(&Z[1]);
-								codeDouble[230].pop(&Z[2]);
+							if (codeDouble[210].pop(&Z_d[0])) {
+								codeDouble[220].pop(&Z_d[1]);
+								codeDouble[230].pop(&Z_d[2]);
 							} else {
-								Z[0]=0; Z[1]=0; Z[2]=1;
+								Z_d[0]=0; Z_d[1]=0; Z_d[2]=1;
 							}
+							Z[0]=Z_d[0]; Z[1]=Z_d[1]; Z[2]=Z_d[2];
 							
-							codeDouble[10].pop(&x0[0]); 
-							codeDouble[20].pop(&x0[1]);
-							codeDouble[30].pop(&x0[2]);
-							codeDouble[40].pop(&r);
+							codeDouble[10].pop(&x0_d[0]); 
+							codeDouble[20].pop(&x0_d[1]);
+							codeDouble[30].pop(&x0_d[2]);
 
-							double f;
-							n=360;
-							int id0,id1,id2;
-							id2=0;
+							x0[0]=x0_d[0]; x0[1]=x0_d[1]; x0[2]=x0_d[2];
 
-							for (k=0; k<n; k++) {
-								f=2*3.14159*k/((double)n);
-								x[0]=x0[0]+r*cos(f);
-								x[1]=x0[1]+r*sin(f);
-								x[2]=x0[2];
-								extrudePoint(x,Z);
-								id1=id2;
-								id2=geom->addGrid(x[0],x[1],x[2]);
-								if (k>0) geom->addLine(id1,id2); else id0=id2;
-							}
-							geom->addLine(id2,id0);
+							codeDouble[40].pop(&r_d);
+							r=r_d;
+
+							CoordinateSystem<float> XYZ;
+
+							createObjectCoordSystem(&XYZ,Z);
+
+							float x_center[3];
+							XYZ.fromLocalToGlobal(x_center,x0);
+
+							XYZ.setCenter(x_center);
+							geom->addCircle(XYZ,r);
+
 						}
 						break;
 
 					case ENT_ARC:
 						{
-							double x0[3];
+							double x0_d[3];
 							double x[3];
 
-							double r;
-							double f1,f2;
-							double Z[3];
+							double r_d;
+							double Z_d[3];
+							double f_d;
+
+							float Z[3];
+							float x0[3];
+							float r;
+							float fmin,fmax;
+
 							int k,n;
 							codeInt[90].pop(&n);
-							if (codeDouble[210].pop(&Z[0])) {
-								codeDouble[220].pop(&Z[1]);
-								codeDouble[230].pop(&Z[2]);
+							if (codeDouble[210].pop(&Z_d[0])) {
+								codeDouble[220].pop(&Z_d[1]);
+								codeDouble[230].pop(&Z_d[2]);
 							} else {
-								Z[0]=0; Z[1]=0; Z[2]=1;
+								Z_d[0]=0; Z_d[1]=0; Z_d[2]=1;
 							}
-							codeDouble[10].pop(&x0[0]); 
-							codeDouble[20].pop(&x0[1]);
-							codeDouble[30].pop(&x0[2]);
-							codeDouble[40].pop(&r);
-							codeDouble[50].pop(&f1);
-							codeDouble[51].pop(&f2);
-							f1=f1*3.14159/180.;
-							f2=f2*3.14159/180.;
+							Z[0]=Z_d[0]; Z[1]=Z_d[1]; Z[2]=Z_d[2];
 
-							double f,df;
-							
-							n=360;
-							int id0,id1,id2;
-							df=(f2-f1)/((double)n);
+							codeDouble[10].pop(&x0_d[0]); 
+							codeDouble[20].pop(&x0_d[1]);
+							codeDouble[30].pop(&x0_d[2]);
 
-							id2=0;
-							
-							for (k=0; k<n; k++) {
-								f=f1+k*df;								
-								
-								x[0]=x0[0]+r*cos(f);
-								x[1]=x0[1]+r*sin(f);
-								x[2]=x0[2];
-								extrudePoint(x,Z);
-								id1=id2;
-								id2=geom->addGrid(x[0],x[1],x[2]);
-								if (k>0) geom->addLine(id1,id2); else id0=id2;
-							}
+							x0[0]=x0_d[0]; x0[1]=x0_d[1]; x0[2]=x0_d[2];
+
+							codeDouble[40].pop(&r_d);
+							r=r_d;
+
+							codeDouble[50].pop(&f_d);
+							fmin=f_d*3.14159/180.;
+							codeDouble[51].pop(&f_d);
+							fmax=f_d*3.14159/180.;
+
+
+							CoordinateSystem<float> XYZ;
+
+							createObjectCoordSystem(&XYZ,Z);
+
+							float x_center[3];
+							XYZ.fromLocalToGlobal(x_center,x0);
+
+							XYZ.setCenter(x_center);
+							geom->addArc(XYZ,r,fmin,fmax);
+
 						}
 						break;
 					case ENT_3DFACE:
