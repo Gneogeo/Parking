@@ -74,7 +74,8 @@ static int readDelimiterString(const char *data,char delim,char delim1,char *tar
 	return k;	
 }
 
-typedef struct IGES_directory {
+class IGES_directory {
+public:
 	int entityType;
 	int parameterData;
 	int structure;
@@ -84,15 +85,35 @@ typedef struct IGES_directory {
 	int transMatrix;
 	int labelDisplayAssoc;
 	int statusNumber;
-	int sequenceNumber;
 	int lineWeightNumber;
 	int colorNumber;
 	int paramLineCount;
 	int formNumber;
 	char entityLabel[9];
 	int entitySubscriptNumber;
-	int seqNumber;
-}IGES_directory;
+        IGES_directory() { memset(this,0,sizeof(IGES_directory)); }
+	void fill(const char Directory[18][9]);
+};
+
+void IGES_directory::fill(const char Directory[18][9])
+{
+	entityType=atoi(Directory[0]);
+	parameterData=atoi(Directory[1]);
+	structure=atoi(Directory[2]);
+	lineFontPattern=atoi(Directory[3]);
+	level=atoi(Directory[4]);
+	view=atoi(Directory[5]);
+	transMatrix=atoi(Directory[6]);
+	labelDisplayAssoc=atoi(Directory[7]);
+	statusNumber=atoi(Directory[8]);
+	lineWeightNumber=atoi(Directory[10]);
+	colorNumber=atoi(Directory[11]);
+	paramLineCount=atoi(Directory[12]);
+	formNumber=atoi(Directory[13]);
+	memcpy(entityLabel,Directory[16],9);
+	entitySubscriptNumber=atoi(Directory[17]);
+}
+
 
 void readIGES(Geometry *geom,const char *name)
 {
@@ -183,11 +204,16 @@ void readIGES(Geometry *geom,const char *name)
 		if (!ok) break;
 		if (igs.letterCode!='D') break;
 
-		for (k=10; k<18; k++) {
+                pnt=igs.data;
+
+                for (k=9; k<18; k++) {
 			memcpy(Directory[k],pnt,8);
 			Directory[k][8]=0;
 			pnt+=8;
 		}
+		IGES_directory IGESD;
+		IGESD.fill(Directory);
+
 
 
 		

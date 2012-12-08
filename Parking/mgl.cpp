@@ -218,30 +218,107 @@ void GLWidget::fixView()
 	float width=size.width();
 	float height=size.height();
 	
-	float maxdepth=20;
-	if (maxdepth<-geom->minn[0]) maxdepth=-geom->minn[0];
-	if (maxdepth<-geom->minn[1]) maxdepth=-geom->minn[1];
-	if (maxdepth<-geom->minn[2]) maxdepth=-geom->minn[2];
-
-	if (maxdepth<geom->maxx[0]) maxdepth=geom->maxx[0];
-	if (maxdepth<geom->maxx[1]) maxdepth=geom->maxx[1];
-	if (maxdepth<geom->maxx[2]) maxdepth=geom->maxx[2];
-
-	zoom = maxdepth;
-
 	GLfloat pmat[16];
 	glMatrixMode (GL_MODELVIEW);	
 	glGetFloatv(GL_MODELVIEW_MATRIX,pmat);
-	pmat[12]=pmat[13]=pmat[14]=0;
-	glLoadMatrixf(pmat);
+
+	if (geom->grids.length()) {
+		int i;
+		float xmin,xmax,ymin,ymax;
 		
-	resizeGL(size.width(),size.height());
+		for (i=0; i<geom->grids.length(); i++) {
+			float *pvec,vec[3];
+			pvec=geom->grids.data[i].coords;
+
+			vec[0]=pvec[0]*pmat[0]+pvec[1]*pmat[4]+pvec[2]*pmat[8]+pmat[12];
+			vec[1]=pvec[0]*pmat[1]+pvec[1]*pmat[5]+pvec[2]*pmat[9]+pmat[13];
+			vec[2]=pvec[0]*pmat[2]+pvec[1]*pmat[6]+pvec[2]*pmat[10]+pmat[14];
+
+			if (i==0) {
+				xmin=xmax=vec[0];
+				ymin=ymax=vec[1];
+			} else {
+				xmin = vec[0]<xmin ? vec[0] : xmin;
+				xmax = vec[0]>xmax ? vec[0] : xmax;
+				ymin = vec[1]<ymin ? vec[1] : ymin;
+				ymax = vec[1]>ymax ? vec[1] : ymax;
+			}
+
+		}
+
+		float cx=(xmin+xmax)*0.5;
+		float cy=(ymin+ymax)*0.5;
+		float dx=(xmax-xmin)*0.5;
+		float dy=(ymax-ymin)*0.5;
+		pmat[12]-=cx;
+		pmat[13]-=cy;
+		glLoadMatrixf(pmat);
+
+		zoom= dx > dy ? dx : dy;
+		resizeGL(size.width(),size.height());
+	}
+
+	/*
+TODO: Must correct the fixView Algorithm
+
+	[X1;1]	= [M p;0 1]*[X;1]
+	X1=M*X+p
+	
+	[X2;1] = [P q;0 1]*[X1;1]
+	X2=P*X1+q
+
+	If glOrtho, P=[1/r 0 0;0 1/t 0;0 0 -2/(f-n)]
+	q=[0; 0; -(f+n)/(f-n)];
+
+
+	P*X1=[X1(1)/r; X1(2)/t 0]
+	X1(1)/r
+Prepei:
+
+	-lim1<X1(1)<lim1
+	-lim2<X1(2)<lim2
+	
+	lim1=zoom*width/side
+	lim2=zoom*height/side
 
 	
 
 	
+
+
+	
+	*/
 	
 	updateGL();
+}
+
+
+void GLWidget::orthoView(GLWidget::Ortho o)
+{
+	GLfloat pmat[16];
+	glMatrixMode (GL_MODELVIEW);
+	glGetFloatv(GL_MODELVIEW_MATRIX,pmat);
+	switch (o) {
+		case XY :
+			pmat[0]=1; pmat[4]=0; pmat[8]=0;
+			pmat[1]=0; pmat[5]=1; pmat[9]=0;
+			pmat[2]=0; pmat[6]=0; pmat[10]=1;
+			glLoadMatrixf(pmat);
+			break;
+		case YZ :
+			pmat[0]=0; pmat[4]=0; pmat[8]=1;
+			pmat[1]=1; pmat[5]=0; pmat[9]=0;
+			pmat[2]=0; pmat[6]=1; pmat[10]=0;
+			glLoadMatrixf(pmat);
+			break;
+		case ZX :
+			pmat[0]=0; pmat[4]=1; pmat[8]=0;
+			pmat[1]=0; pmat[5]=0; pmat[9]=1;
+			pmat[2]=1; pmat[6]=0; pmat[10]=0;
+			glLoadMatrixf(pmat);
+			break;
+	}
+	fixView();
 }
 
 void GLWidget::keyPressEvent(QKeyEvent *event)

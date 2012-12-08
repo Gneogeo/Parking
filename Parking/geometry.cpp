@@ -3,6 +3,7 @@
 #include "stl_reader.h"
 #include "dxf_reader.h"
 #include "chunck3ds_reader.h"
+#include "iges_reader.h"
 #include <qdebug.h>
 
 #include <GL/glu.h>
@@ -444,47 +445,48 @@ void Geometry::shrinkGeometry()
 
 void Geometry::compressGrids()
 {
+	if (!grids.length()) return;
 	float dx,dy,dz;
 	int *realPos;
 	int rp;
 	int k;
 
 	/*Sorting grids(012)*/
-	qsort(grids.data,grids.len,sizeof(Grid),compareGrids);
+	qsort(grids.data,grids.length(),sizeof(Grid),compareGrids);
 	
-	realPos=new int[grids.len];
-	for (k=0; k<grids.len; k++) {
+	realPos=new int[grids.length()];
+	for (k=0; k<grids.length(); k++) {
 		realPos[grids.data[k].pos]=k;
 	}
 
 	/*Converting triangle grids*/
-	for (k=0; k<triangles.len; k++) {
+	for (k=0; k<triangles.length(); k++) {
 		triangles.data[k].node[0]=realPos[triangles.data[k].node[0]];
 		triangles.data[k].node[1]=realPos[triangles.data[k].node[1]];
 		triangles.data[k].node[2]=realPos[triangles.data[k].node[2]];
 	}
 	/*Converting line grids*/
-	for (k=0; k<lines.len; k++) {
+	for (k=0; k<lines.length(); k++) {
 		lines.data[k].node[0]=realPos[lines.data[k].node[0]];
 		lines.data[k].node[1]=realPos[lines.data[k].node[1]];
 	}
 	/*Converting point grids*/
-	for (k=0; k<points.len; k++) {
+	for (k=0; k<points.length(); k++) {
 		points.data[k]=realPos[points.data[k]];
 	}
 	/*Converting edge grids*/
-	for (k=0; k<edges.len; k++) {
+	for (k=0; k<edges.length(); k++) {
 		edges.data[k].node[0]=realPos[edges.data[k].node[0]];
 		edges.data[k].node[1]=realPos[edges.data[k].node[1]];
 	}
 
 
 
-	for (k=0; k<grids.len; k++) grids.data[k].pos=k;
+	for (k=0; k<grids.length(); k++) grids.data[k].pos=k;
 
 	realPos[0]=0;
 	rp=0;
-	for (k=1; k<grids.len; k++) {
+	for (k=1; k<grids.length(); k++) {
 		dx=grids.data[k].coords[0]-grids.data[rp].coords[0];
 		dy=grids.data[k].coords[1]-grids.data[rp].coords[1];
 		dz=grids.data[k].coords[2]-grids.data[rp].coords[2];
@@ -499,25 +501,25 @@ void Geometry::compressGrids()
 		}
 		realPos[k]=rp;
 	}
-	grids.len=rp+1;
+	grids.truncateInto(rp+1);
 
 	/*Converting triangle grids*/
-	for (k=0; k<triangles.len; k++) {
+	for (k=0; k<triangles.length(); k++) {
 		triangles.data[k].node[0]=realPos[triangles.data[k].node[0]];
 		triangles.data[k].node[1]=realPos[triangles.data[k].node[1]];
 		triangles.data[k].node[2]=realPos[triangles.data[k].node[2]];
 	}
 	/*Converting line grids*/
-	for (k=0; k<lines.len; k++) {
+	for (k=0; k<lines.length(); k++) {
 		lines.data[k].node[0]=realPos[lines.data[k].node[0]];
 		lines.data[k].node[1]=realPos[lines.data[k].node[1]];
 	}
 	/*Converting point grids*/
-	for (k=0; k<points.len; k++) {
+	for (k=0; k<points.length(); k++) {
 		points.data[k]=realPos[points.data[k]];
 	}
 	/*Converting edge grids*/
-	for (k=0; k<edges.len; k++) {
+	for (k=0; k<edges.length(); k++) {
 		edges.data[k].node[0]=realPos[edges.data[k].node[0]];
 		edges.data[k].node[1]=realPos[edges.data[k].node[1]];
 	}
@@ -580,34 +582,49 @@ void Geometry::load3DS(char *name)
 }
 
 
+void Geometry::loadIGES(char *name)
+{
+	readIGES(this,name);
+
+	compressGrids();
+
+	calcTrianglesNormals();
+
+	makeEdgeStrip();
+	makeLineStrip();
+	makeTriaStrip();
+
+}
+
 
 void Geometry::makeEdgeStrip()
 {
-	
+
+	if (edges.length()==0) return;
 
 	clock_t t=clock();
 
 	int k,k1,k2;
-	int *totalEdgesOnGrid=(int *)calloc(grids.len,sizeof(int));
-	for (k=0; k<edges.len; k++) {
+	int *totalEdgesOnGrid=(int *)calloc(grids.length(),sizeof(int));
+	for (k=0; k<edges.length(); k++) {
 		totalEdgesOnGrid[edges.data[k].node[0]]++;
 		totalEdgesOnGrid[edges.data[k].node[1]]++;
 	}
 	
 	
-	int *conn_buffer=(int *)calloc(2*edges.len,sizeof(int));
-	int **edgesOnGrid=(int **)calloc(grids.len,sizeof(int *));
+	int *conn_buffer=(int *)calloc(2*edges.length(),sizeof(int));
+	int **edgesOnGrid=(int **)calloc(grids.length(),sizeof(int *));
 	
 	edgesOnGrid[0]=conn_buffer;
-	for (k=1; k<grids.len; k++) {
+	for (k=1; k<grids.length(); k++) {
 		edgesOnGrid[k]=edgesOnGrid[k-1]+ totalEdgesOnGrid[k-1];
 		totalEdgesOnGrid[k-1]=0;
 	}	
-	totalEdgesOnGrid[grids.len-1]=0;
+	totalEdgesOnGrid[grids.length()-1]=0;
 
 	int edj1,edj2,fnd;
 
-	for (k=0; k<edges.len; k++) {
+	for (k=0; k<edges.length(); k++) {
 		edj1=edges.data[k].node[0];
 		edj2=edges.data[k].node[1];
 
@@ -631,10 +648,10 @@ void Geometry::makeEdgeStrip()
 	int k0;
 	k0=0;
 	for (;;) {
-		while (k0<grids.len && totalEdgesOnGrid[k0]==0) {
+		while (k0<grids.length() && totalEdgesOnGrid[k0]==0) {
 			k0++;
 		}
-		if (k0==grids.len) break;
+		if (k0==grids.length()) break;
 
 		k=k0;
 		
@@ -704,31 +721,33 @@ void Geometry::makeEdgeStrip()
 
 void Geometry::makeLineStrip()
 {
+
+	if (lines.length()==0) return;
 	
 
 	clock_t t=clock();
 
 	int k,k1,k2;
-	int *totalLinesOnGrid=(int *)calloc(grids.len,sizeof(int));
-	for (k=0; k<lines.len; k++) {
+	int *totalLinesOnGrid=(int *)calloc(grids.length(),sizeof(int));
+	for (k=0; k<lines.length(); k++) {
 		totalLinesOnGrid[lines.data[k].node[0]]++;
 		totalLinesOnGrid[lines.data[k].node[1]]++;
 	}
 	
 	
-	int *conn_buffer=(int *)calloc(2*lines.len,sizeof(int));
-	int **linesOnGrid=(int **)calloc(grids.len,sizeof(int *));
+	int *conn_buffer=(int *)calloc(2*lines.length(),sizeof(int));
+	int **linesOnGrid=(int **)calloc(grids.length(),sizeof(int *));
 	
 	linesOnGrid[0]=conn_buffer;
-	for (k=1; k<grids.len; k++) {
+	for (k=1; k<grids.length(); k++) {
 		linesOnGrid[k]=linesOnGrid[k-1]+ totalLinesOnGrid[k-1];
 		totalLinesOnGrid[k-1]=0;
 	}	
-	totalLinesOnGrid[grids.len-1]=0;
+	totalLinesOnGrid[grids.length()-1]=0;
 
 	int edj1,edj2,fnd;
 
-	for (k=0; k<lines.len; k++) {
+	for (k=0; k<lines.length(); k++) {
 		edj1=lines.data[k].node[0];
 		edj2=lines.data[k].node[1];
 
@@ -752,10 +771,10 @@ void Geometry::makeLineStrip()
 	int k0;
 	k0=0;
 	for (;;) {
-		while (k0<grids.len && totalLinesOnGrid[k0]==0) {
+		while (k0<grids.length() && totalLinesOnGrid[k0]==0) {
 			k0++;
 		}
-		if (k0==grids.len) break;
+		if (k0==grids.length()) break;
 
 		k=k0;
 		
@@ -835,12 +854,12 @@ void Geometry::makeTriaStrip()
 
 	/*Edge calculation*/
 	int k,rp;
-	int edge_len=3*triangles.len;
+	int edge_len=3*triangles.length();
 	Edge *edge=(Edge *)malloc(edge_len*sizeof(Edge));
 	
 	edge_len=0;	
 
-	for (k=0; k<triangles.len; k++) {
+	for (k=0; k<triangles.length(); k++) {
 		edge[edge_len].nod[0]=triangles.data[k].node[0];
 		edge[edge_len].nod[1]=triangles.data[k].node[1];
 		edge[edge_len].elem[0]=k;
@@ -886,8 +905,8 @@ void Geometry::makeTriaStrip()
 	
 	int (*conn)[3];
 	int *connLen;
-	conn=(int (*)[3])malloc(triangles.len*sizeof(int[3]));
-	connLen=(int *)calloc(triangles.len,sizeof(int));
+	conn=(int (*)[3])malloc(triangles.length()*sizeof(int[3]));
+	connLen=(int *)calloc(triangles.length(),sizeof(int));
 
 	int el1,el2;
 	for (k=0; k<edge_len; k++) {
@@ -906,10 +925,10 @@ void Geometry::makeTriaStrip()
 	int k0;
 	k0=0;
 	for (;;) {
-		while (k0<triangles.len && connLen[k0]==0) {
+		while (k0<triangles.length() && connLen[k0]==0) {
 			k0++;
 		}
-		if (k0==triangles.len) break;
+		if (k0==triangles.length()) break;
 
 		
 

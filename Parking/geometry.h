@@ -46,11 +46,10 @@ public:
 template <typename T> class myVector {
 	myVector(myVector &x); //deactivated copy-constructor
 	unsigned int mem;
-	
+	unsigned int len;
 
 public:
 	T *data;
-	unsigned int len;
 	
 
 	myVector() {
@@ -76,6 +75,9 @@ public:
 
 	void truncate() {
 		free(data); data=0; len=0; mem=0;
+	}
+	void truncateInto(unsigned int ln) {
+		if (ln<len) len=ln;
 	}
 
 	unsigned int length() {return len;}
@@ -128,6 +130,7 @@ public:
 	void loadSTL(char *name);
 	void loadDXF(char *name);
 	void load3DS(char *name);
+	void loadIGES(char *name);
 
 	void translateGeometry(float mat[4][4]);
 

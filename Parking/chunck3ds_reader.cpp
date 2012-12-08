@@ -68,7 +68,7 @@ int readChunck(FILE *fp,Geometry *geom)
 		case 0x3d3d:
 		case 0x4100:
 		case 0xb000:
-			if (chunck_id==0x4100) firstVertexId=geom->grids.len;
+			if (chunck_id==0x4100) firstVertexId=geom->grids.length();
 			while (remain<chunck_len) {
 				rm=readChunck(fp,geom); 
 				if (!rm) {

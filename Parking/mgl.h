@@ -20,6 +20,16 @@ public:
 
 	void fixView();
 
+	enum Ortho {
+		XY,
+		YZ,
+		ZX
+	};
+
+	void orthoView(Ortho o);
+	
+
+
 protected:
 	void initializeGL();
 	void paintGL();

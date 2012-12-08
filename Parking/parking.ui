@@ -31,6 +31,7 @@
     <addaction name="action_LoadSTL"/>
     <addaction name="action_LoadDXF"/>
     <addaction name="action_Load3DS"/>
+    <addaction name="action_LoadIGES"/>
    </widget>
    <addaction name="menuHello"/>
   </widget>
@@ -58,6 +59,11 @@
   <action name="action_Load3DS">
    <property name="text">
     <string>Load 3DS</string>
+   </property>
+  </action>
+  <action name="action_LoadIGES">
+   <property name="text">
+    <string>Load IGES</string>
    </property>
   </action>
  </widget>
