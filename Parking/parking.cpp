@@ -90,7 +90,7 @@ void parking::load3DS()
 void parking::loadIGES()
 {
         QString file=QFileDialog::getOpenFileName(this,QString::fromLocal8Bit("Open File..."),
-                QString::fromLocal8Bit(""),QString::fromLocal8Bit("IGES Files (*.ig*s)"));
+                QString::fromLocal8Bit(""),QString::fromLocal8Bit("IGES Files (*.igs ; *.iges)"));
         if (!file.isEmpty()) {
                 if (!Widget->geom) {
                         delete Widget->geom;

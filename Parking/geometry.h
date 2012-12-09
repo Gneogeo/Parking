@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <malloc.h>
+#include <cstdlib>
 #include "vector3d.h"
 #include "coord_system.h"
 
@@ -47,9 +48,10 @@ template <typename T> class myVector {
 	myVector(myVector &x); //deactivated copy-constructor
 	unsigned int mem;
 	unsigned int len;
+        T *data;
 
 public:
-	T *data;
+
 	
 
 	myVector() {
@@ -85,6 +87,11 @@ public:
 	const T *getData() {return data;}
 
 	T &at(unsigned int i) {return data[i];}
+
+	void Qsort(int (*compareFunc)(const T *k1,const T *k2)) {
+		::qsort(data,len,sizeof(T),( int(*)(const void *,const void *))compareFunc);
+	}
+
 	
 };
 

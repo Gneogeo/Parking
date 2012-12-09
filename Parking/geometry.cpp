@@ -140,7 +140,7 @@ int Geometry::addArc(const CoordinateSystem<float> XYZ,float radius,float fmin,f
 
 void Geometry::calcTrianglesNormals()
 {
-	int k;
+        unsigned int k;
 	Triangle *tria;
 	float *crd[3];
 	
@@ -150,10 +150,11 @@ void Geometry::calcTrianglesNormals()
 
 	float s;
 	for (k=0; k<triangles.length(); k++) {
-		tria=&triangles.data[k];
-		crd[0]=grids.data[tria->node[0]].coords;
-		crd[1]=grids.data[tria->node[1]].coords;
-		crd[2]=grids.data[tria->node[2]].coords;
+                tria=&triangles.at(k);
+
+                crd[0]=grids.at(tria->node[0]).coords;
+                crd[1]=grids.at(tria->node[1]).coords;
+                crd[2]=grids.at(tria->node[2]).coords;
 
 		vec[0].diff(crd[0],crd[1]);
 		vec[1].diff(crd[1],crd[2]);
@@ -191,17 +192,17 @@ void Geometry::calcTrianglesSmoothNormals()
 
 	Triangle *tria;
 
-	int k,k1;
+        unsigned int k,k1;
 	/*Calculating smooth normals algorithm*/
 	clock_t t=clock();
 
 	/*First, how many triangles are attached on each grid*/
-	int *trianglesPerGrid=(int *)calloc(grids.length(),sizeof(int));
+        unsigned int *trianglesPerGrid=(unsigned int *)calloc(grids.length(),sizeof(unsigned int));
 
 	int globalTrianglesPerGrid=0;
 
 	for (k=0; k<triangles.length(); k++) {
-		tria=&triangles.data[k];
+                tria=&triangles.at(k);
 		for (k1=0; k1<3; k1++) {
 			trianglesPerGrid[tria->node[k1]]++;
 		}
@@ -223,7 +224,7 @@ void Geometry::calcTrianglesSmoothNormals()
 	}
 
 	for (k=0; k<triangles.length(); k++) {
-		tria=&triangles.data[k];
+                tria=&triangles.at(k);
 		for (k1=0; k1<3; k1++) {
 			trianglesOnGrid[tria->node[k1]][trianglesPerGrid[tria->node[k1]]]=k;
 			trianglesPerGrid[tria->node[k1]]++;
@@ -235,7 +236,7 @@ void Geometry::calcTrianglesSmoothNormals()
 	for (k=0; k<grids.length(); k++) {
 		cnormal.zero();
 		for (k1=0; k1<trianglesPerGrid[k]; k1++) {
-			tria=&triangles.data[trianglesOnGrid[k][k1]];
+                        tria=&triangles.at(trianglesOnGrid[k][k1]);
 			cnormal.add(tria->normal);
 		}
 		float *norm=cnormal.data;
@@ -245,7 +246,7 @@ void Geometry::calcTrianglesSmoothNormals()
 
 		int j;
 		for (k1=0; k1<trianglesPerGrid[k]; k1++) {
-			tria=&triangles.data[trianglesOnGrid[k][k1]];
+                        tria=&triangles.at(trianglesOnGrid[k][k1]);
 			j=-1;
 			if (tria->node[0]==k) j=0;
 			else if (tria->node[1]==k) j=1;
@@ -273,7 +274,7 @@ void Geometry::translateGeometry(float mat[4][4])
 	int k;
 	float v[3],*v1;
 	for (k=0; k<grids.length(); k++) {
-		v1=grids.data[k].coords;
+                v1=grids.at(k).coords;
 		v[0]=mat[0][0]*v1[0]+mat[0][1]*v1[1]+mat[0][2]*v1[2]+mat[0][3];
 		v[1]=mat[1][0]*v1[0]+mat[1][1]*v1[1]+mat[1][2]*v1[2]+mat[1][3];
 		v[2]=mat[2][0]*v1[0]+mat[2][1]*v1[1]+mat[2][2]*v1[2]+mat[2][3];
@@ -312,20 +313,20 @@ void Geometry::recalcEdge(float angle)
 	edge_len=0;
 
 	for (k=0; k<triangles.length(); k++) {
-		edge[edge_len].nod[0]=triangles.data[k].node[0];
-		edge[edge_len].nod[1]=triangles.data[k].node[1];
+                edge[edge_len].nod[0]=triangles.at(k).node[0];
+                edge[edge_len].nod[1]=triangles.at(k).node[1];
 		edge[edge_len].elem[0]=k;
 		edge[edge_len].elem[1]=-1;
 		edge_len++;
 
-		edge[edge_len].nod[0]=triangles.data[k].node[1];
-		edge[edge_len].nod[1]=triangles.data[k].node[2];
+                edge[edge_len].nod[0]=triangles.at(k).node[1];
+                edge[edge_len].nod[1]=triangles.at(k).node[2];
 		edge[edge_len].elem[0]=k;
 		edge[edge_len].elem[1]=-1;
 		edge_len++;
 
-		edge[edge_len].nod[0]=triangles.data[k].node[2];
-		edge[edge_len].nod[1]=triangles.data[k].node[0];
+                edge[edge_len].nod[0]=triangles.at(k).node[2];
+                edge[edge_len].nod[1]=triangles.at(k).node[0];
 		edge[edge_len].elem[0]=k;
 		edge[edge_len].elem[1]=-1;
 		edge_len++;
@@ -365,8 +366,8 @@ void Geometry::recalcEdge(float angle)
 
 
 
-				nrm1=triangles.data[edge[k].elem[0]].normal.data;
-				nrm2=triangles.data[edge[k].elem[1]].normal.data;
+                                nrm1=triangles.at(edge[k].elem[0]).normal.data;
+                                nrm2=triangles.at(edge[k].elem[1]).normal.data;
 				
 				cosf=nrm1[0]*nrm2[0]+nrm1[1]*nrm2[1]+nrm1[2]*nrm2[2];
 				if (cosf>-cf && cosf<cf ) {
@@ -383,31 +384,31 @@ void Geometry::recalcEdge(float angle)
 }
 
 
-static int compareGrids(const void *f1,const void *f2)
+static int compareGrids(const Grid *f1,const Grid *f2)
 {
-	if (((Grid *)f1)->coords[0]>((Grid *)f2)->coords[0]) return 1;
-	else if (((Grid *)f1)->coords[0]<((Grid *)f2)->coords[0]) return -1;
+	if (f1->coords[0]>f2->coords[0]) return 1;
+	else if (f1->coords[0]<f2->coords[0]) return -1;
 	else {
-		if (((Grid *)f1)->coords[1]>((Grid *)f2)->coords[1]) return 1;
-		else if (((Grid *)f1)->coords[1]<((Grid *)f2)->coords[1]) return -1;
+		if (f1->coords[1]>f2->coords[1]) return 1;
+		else if (f1->coords[1]<f2->coords[1]) return -1;
 		else {
-			if (((Grid *)f1)->coords[2]>((Grid *)f2)->coords[2]) return 1;
-			else if (((Grid *)f1)->coords[2]<((Grid *)f2)->coords[2]) return -1;
+			if (f1->coords[2]>f2->coords[2]) return 1;
+			else if (f1->coords[2]<f2->coords[2]) return -1;
 			else return 0;
 		}
 	}
 }
 
-static int compareGrids1(const void *f1,const void *f2)
+static int compareGrids1(const Grid *f1,const Grid *f2)
 {
-	if (((Grid *)f1)->coords[1]>((Grid *)f2)->coords[1]) return 1;
-	else if (((Grid *)f1)->coords[1]<((Grid *)f2)->coords[1]) return -1;
+	if (f1->coords[1]>f2->coords[1]) return 1;
+	else if (f1->coords[1]<f2->coords[1]) return -1;
 	else {
-		if (((Grid *)f1)->coords[2]>((Grid *)f2)->coords[2]) return 1;
-		else if (((Grid *)f1)->coords[2]<((Grid *)f2)->coords[2]) return -1;
+		if (f1->coords[2]>f2->coords[2]) return 1;
+		else if (f1->coords[2]<f2->coords[2]) return -1;
 		else {
-			if (((Grid *)f1)->coords[0]>((Grid *)f2)->coords[0]) return 1;
-			else if (((Grid *)f1)->coords[0]<((Grid *)f2)->coords[0]) return -1;
+			if (f1->coords[0]>f2->coords[0]) return 1;
+			else if (f1->coords[0]<f2->coords[0]) return -1;
 			else return 0;
 		}
 	}
@@ -428,17 +429,17 @@ void Geometry::shrinkGeometry()
 	if (r3<r) r=r3;
 
 	for (k=0; k<grids.length(); k++) {
-		grids.data[k].coords[0]-=(minn[0]+maxx[0])*.5;
-		grids.data[k].coords[1]-=(minn[1]+maxx[1])*.5;
-		grids.data[k].coords[2]-=(minn[2]+maxx[2])*.5;
+                grids.at(k).coords[0]-=(minn[0]+maxx[0])*.5;
+                grids.at(k).coords[1]-=(minn[1]+maxx[1])*.5;
+                grids.at(k).coords[2]-=(minn[2]+maxx[2])*.5;
 
 		
-		grids.data[k].coords[0]*=r;
-		grids.data[k].coords[1]*=r;
-		grids.data[k].coords[2]*=r;
+                grids.at(k).coords[0]*=r;
+                grids.at(k).coords[1]*=r;
+                grids.at(k).coords[2]*=r;
 
-		grids.data[k].coords[1]+=5;
-		grids.data[k].coords[2]+=2.5;
+                grids.at(k).coords[1]+=5;
+                grids.at(k).coords[2]+=2.5;
 	}
 }
 
@@ -452,52 +453,52 @@ void Geometry::compressGrids()
 	int k;
 
 	/*Sorting grids(012)*/
-	qsort(grids.data,grids.length(),sizeof(Grid),compareGrids);
+	grids.Qsort(compareGrids);
 	
 	realPos=new int[grids.length()];
 	for (k=0; k<grids.length(); k++) {
-		realPos[grids.data[k].pos]=k;
+                realPos[grids.at(k).pos]=k;
 	}
 
 	/*Converting triangle grids*/
 	for (k=0; k<triangles.length(); k++) {
-		triangles.data[k].node[0]=realPos[triangles.data[k].node[0]];
-		triangles.data[k].node[1]=realPos[triangles.data[k].node[1]];
-		triangles.data[k].node[2]=realPos[triangles.data[k].node[2]];
+		triangles.at(k).node[0]=realPos[triangles.at(k).node[0]];
+		triangles.at(k).node[1]=realPos[triangles.at(k).node[1]];
+		triangles.at(k).node[2]=realPos[triangles.at(k).node[2]];
 	}
 	/*Converting line grids*/
 	for (k=0; k<lines.length(); k++) {
-		lines.data[k].node[0]=realPos[lines.data[k].node[0]];
-		lines.data[k].node[1]=realPos[lines.data[k].node[1]];
+		lines.at(k).node[0]=realPos[lines.at(k).node[0]];
+		lines.at(k).node[1]=realPos[lines.at(k).node[1]];
 	}
 	/*Converting point grids*/
 	for (k=0; k<points.length(); k++) {
-		points.data[k]=realPos[points.data[k]];
+		points.at(k)=realPos[points.at(k)];
 	}
 	/*Converting edge grids*/
 	for (k=0; k<edges.length(); k++) {
-		edges.data[k].node[0]=realPos[edges.data[k].node[0]];
-		edges.data[k].node[1]=realPos[edges.data[k].node[1]];
+		edges.at(k).node[0]=realPos[edges.at(k).node[0]];
+		edges.at(k).node[1]=realPos[edges.at(k).node[1]];
 	}
 
 
 
-	for (k=0; k<grids.length(); k++) grids.data[k].pos=k;
+	for (k=0; k<grids.length(); k++) grids.at(k).pos=k;
 
 	realPos[0]=0;
 	rp=0;
 	for (k=1; k<grids.length(); k++) {
-		dx=grids.data[k].coords[0]-grids.data[rp].coords[0];
-		dy=grids.data[k].coords[1]-grids.data[rp].coords[1];
-		dz=grids.data[k].coords[2]-grids.data[rp].coords[2];
+		dx=grids.at(k).coords[0]-grids.at(rp).coords[0];
+		dy=grids.at(k).coords[1]-grids.at(rp).coords[1];
+		dz=grids.at(k).coords[2]-grids.at(rp).coords[2];
 		if (dx*dx+dy*dy+dz*dz<1e-12)
 		{
 			dx=0;
 		} else {
 			rp++;
-			grids.data[rp].coords[0]=grids.data[k].coords[0];
-			grids.data[rp].coords[1]=grids.data[k].coords[1];
-			grids.data[rp].coords[2]=grids.data[k].coords[2];
+			grids.at(rp).coords[0]=grids.at(k).coords[0];
+			grids.at(rp).coords[1]=grids.at(k).coords[1];
+			grids.at(rp).coords[2]=grids.at(k).coords[2];
 		}
 		realPos[k]=rp;
 	}
@@ -505,23 +506,23 @@ void Geometry::compressGrids()
 
 	/*Converting triangle grids*/
 	for (k=0; k<triangles.length(); k++) {
-		triangles.data[k].node[0]=realPos[triangles.data[k].node[0]];
-		triangles.data[k].node[1]=realPos[triangles.data[k].node[1]];
-		triangles.data[k].node[2]=realPos[triangles.data[k].node[2]];
+		triangles.at(k).node[0]=realPos[triangles.at(k).node[0]];
+		triangles.at(k).node[1]=realPos[triangles.at(k).node[1]];
+		triangles.at(k).node[2]=realPos[triangles.at(k).node[2]];
 	}
 	/*Converting line grids*/
 	for (k=0; k<lines.length(); k++) {
-		lines.data[k].node[0]=realPos[lines.data[k].node[0]];
-		lines.data[k].node[1]=realPos[lines.data[k].node[1]];
+		lines.at(k).node[0]=realPos[lines.at(k).node[0]];
+		lines.at(k).node[1]=realPos[lines.at(k).node[1]];
 	}
 	/*Converting point grids*/
 	for (k=0; k<points.length(); k++) {
-		points.data[k]=realPos[points.data[k]];
+		points.at(k)=realPos[points.at(k)];
 	}
 	/*Converting edge grids*/
 	for (k=0; k<edges.length(); k++) {
-		edges.data[k].node[0]=realPos[edges.data[k].node[0]];
-		edges.data[k].node[1]=realPos[edges.data[k].node[1]];
+		edges.at(k).node[0]=realPos[edges.at(k).node[0]];
+		edges.at(k).node[1]=realPos[edges.at(k).node[1]];
 	}
 	delete []realPos;
 }
@@ -607,8 +608,8 @@ void Geometry::makeEdgeStrip()
 	int k,k1,k2;
 	int *totalEdgesOnGrid=(int *)calloc(grids.length(),sizeof(int));
 	for (k=0; k<edges.length(); k++) {
-		totalEdgesOnGrid[edges.data[k].node[0]]++;
-		totalEdgesOnGrid[edges.data[k].node[1]]++;
+		totalEdgesOnGrid[edges.at(k).node[0]]++;
+		totalEdgesOnGrid[edges.at(k).node[1]]++;
 	}
 	
 	
@@ -625,8 +626,8 @@ void Geometry::makeEdgeStrip()
 	int edj1,edj2,fnd;
 
 	for (k=0; k<edges.length(); k++) {
-		edj1=edges.data[k].node[0];
-		edj2=edges.data[k].node[1];
+		edj1=edges.at(k).node[0];
+		edj2=edges.at(k).node[1];
 
 		edgesOnGrid[edj1][totalEdgesOnGrid[edj1]]=edj2;
 		totalEdgesOnGrid[edj1]++;
@@ -730,8 +731,8 @@ void Geometry::makeLineStrip()
 	int k,k1,k2;
 	int *totalLinesOnGrid=(int *)calloc(grids.length(),sizeof(int));
 	for (k=0; k<lines.length(); k++) {
-		totalLinesOnGrid[lines.data[k].node[0]]++;
-		totalLinesOnGrid[lines.data[k].node[1]]++;
+		totalLinesOnGrid[lines.at(k).node[0]]++;
+		totalLinesOnGrid[lines.at(k).node[1]]++;
 	}
 	
 	
@@ -748,8 +749,8 @@ void Geometry::makeLineStrip()
 	int edj1,edj2,fnd;
 
 	for (k=0; k<lines.length(); k++) {
-		edj1=lines.data[k].node[0];
-		edj2=lines.data[k].node[1];
+		edj1=lines.at(k).node[0];
+		edj2=lines.at(k).node[1];
 
 		linesOnGrid[edj1][totalLinesOnGrid[edj1]]=edj2;
 		totalLinesOnGrid[edj1]++;
@@ -860,20 +861,20 @@ void Geometry::makeTriaStrip()
 	edge_len=0;	
 
 	for (k=0; k<triangles.length(); k++) {
-		edge[edge_len].nod[0]=triangles.data[k].node[0];
-		edge[edge_len].nod[1]=triangles.data[k].node[1];
+		edge[edge_len].nod[0]=triangles.at(k).node[0];
+		edge[edge_len].nod[1]=triangles.at(k).node[1];
 		edge[edge_len].elem[0]=k;
 		edge[edge_len].elem[1]=-1;
 		edge_len++;
 
-		edge[edge_len].nod[0]=triangles.data[k].node[1];
-		edge[edge_len].nod[1]=triangles.data[k].node[2];
+		edge[edge_len].nod[0]=triangles.at(k).node[1];
+		edge[edge_len].nod[1]=triangles.at(k).node[2];
 		edge[edge_len].elem[0]=k;
 		edge[edge_len].elem[1]=-1;
 		edge_len++;
 
-		edge[edge_len].nod[0]=triangles.data[k].node[2];
-		edge[edge_len].nod[1]=triangles.data[k].node[0];
+		edge[edge_len].nod[0]=triangles.at(k).node[2];
+		edge[edge_len].nod[1]=triangles.at(k).node[0];
 		edge[edge_len].elem[0]=k;
 		edge[edge_len].elem[1]=-1;
 		edge_len++;
@@ -973,7 +974,7 @@ void Geometry::drawEdgeStrip()
 		}
 #else
 		glEnableClientState(GL_VERTEX_ARRAY);
-		glVertexPointer(3,GL_FLOAT,sizeof(Grid),&grids.data[0].coords);
+                glVertexPointer(3,GL_FLOAT,sizeof(Grid),&grids.at(0).coords);
 
 		while (ar[0]) {
 			totta=ar[0]; ar++;
@@ -1018,7 +1019,7 @@ void Geometry::drawLineStrip()
 		}
 #else
 		glEnableClientState(GL_VERTEX_ARRAY);
-		glVertexPointer(3,GL_FLOAT,sizeof(Grid),&grids.data[0].coords);
+                glVertexPointer(3,GL_FLOAT,sizeof(Grid),&grids.at(0).coords);
 
 
 

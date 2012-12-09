@@ -223,12 +223,12 @@ void GLWidget::fixView()
 	glGetFloatv(GL_MODELVIEW_MATRIX,pmat);
 
 	if (geom->grids.length()) {
-		int i;
+                unsigned int i;
 		float xmin,xmax,ymin,ymax;
 		
 		for (i=0; i<geom->grids.length(); i++) {
 			float *pvec,vec[3];
-			pvec=geom->grids.data[i].coords;
+                        pvec=geom->grids.at(i).coords;
 
 			vec[0]=pvec[0]*pmat[0]+pvec[1]*pmat[4]+pvec[2]*pmat[8]+pmat[12];
 			vec[1]=pvec[0]*pmat[1]+pvec[1]*pmat[5]+pvec[2]*pmat[9]+pmat[13];
@@ -437,7 +437,7 @@ int GLWidget::pickGrid(int x1,int y1,int x2,int y2)
 		
 		glPushName(100);
 		
-		int k;
+                unsigned int k;
 		for (k=0; k<geom->grids.length(); k++) {
 			glLoadName(k);
 			glBegin(GL_POINTS); 
@@ -558,7 +558,7 @@ void GLWidget::paintGL()
 	glEnd();
 
 	if (geom) {
-		int k,k1;
+                unsigned int k,k1;
 		
 		glEnable(GL_LIGHTING);
 

@@ -28,6 +28,14 @@ class IGES_line {
 	char letterCode;
 	int sequenceNumber;
 
+	char ParameterDelimiterChar;
+	char RecordDelimiterChar;
+
+	IGES_line() { 
+		ParameterDelimiterChar=',';
+		RecordDelimiterChar=';';
+	}
+
 	int readLine(FILE *fp) {
 		if (feof(fp)) return 0;
 		char temp[100];
@@ -40,6 +48,20 @@ class IGES_line {
 		return 1;
 	}
 
+	int readDelimString(const char *data,char *target) {
+		int k=0;
+		const char *pdata=data;
+		while (pdata[0]!=ParameterDelimiterChar && pdata[0]!=RecordDelimiterChar) {
+			target[k]=pdata[0];
+			k++;
+			pdata++;
+			if (pdata[0]==0) break;
+		}
+		target[k]=0;
+		if (data[k]!=0) k++;	
+		return k;
+	}
+
 };
 
 static int readHollerithString(const char *data,char *target)
@@ -47,7 +69,8 @@ static int readHollerithString(const char *data,char *target)
 	int ret=0;
 	int total=0;
 	while (data[0]!='H') {
-		if (data[0]=='\0') return ret;
+            if (data[0]=='\0') {target[0]=0; return ret;}
+            if (data[0]<'0' || data[0]>'9') {target[0]=0; return ret;}
 		total=total*10+ data[0]-'0';
 		data++; ret++;
 	}
@@ -61,18 +84,6 @@ static int readHollerithString(const char *data,char *target)
 	return ret;
 }
 
-static int readDelimiterString(const char *data,char delim,char delim1,char *target)
-{
-	int k=0;
-	while (data[0]!=delim && data[0]!=delim1) {
-		target[k]=data[0];
-		k++;
-		data++;
-		if (data[0]==0) break;
-	}
-	target[k]=0;
-	return k;	
-}
 
 class IGES_directory {
 public:
@@ -174,10 +185,7 @@ void readIGES(Geometry *geom,const char *name)
 					}
 					break;
 				default:
-					pnt+=readDelimiterString(pnt,ParameterDelimiterChar,RecordDelimiterChar,GlobalParam[globalParamCount]);
-					if (pnt[0]!=0) {
-						pnt++;
-					}
+					pnt+=igs.readDelimString(pnt,GlobalParam[globalParamCount]);
 					break;
 
 			}
@@ -189,6 +197,7 @@ void readIGES(Geometry *geom,const char *name)
 		ok=igs.readLine(fp);
 	}
 
+	myVector<IGES_directory> dirlist;
 	while (ok) {
 		if (igs.letterCode!='D') break;
 		char Directory[18][9];
@@ -214,11 +223,178 @@ void readIGES(Geometry *geom,const char *name)
 		IGES_directory IGESD;
 		IGESD.fill(Directory);
 
+		dirlist.append(IGESD);
+
 
 
 		
 		ok=igs.readLine(fp);
 
+	}
+
+	int igesCount=0;
+	while (ok) {
+		if (igs.letterCode!='P') break;
+
+		QString ParameterLine;
+		while (ok) {
+			igs.data[64]=0;
+			stripTrailingSpaces(igs.data);
+			int len=strlen(igs.data);
+			ParameterLine.append(QString::fromLocal8Bit(igs.data));
+/*TODO : What can I do if Record delimiter is the same as parameter delimiter? */
+			if (len && igs.data[len-1]==RecordDelimiterChar) break;
+			ok=igs.readLine(fp);
+		}
+//		qDebug("Parameter Line : '%s'",ParameterLine.toLocal8Bit().data());
+		
+		IGES_directory *igesd;
+		igesd=&dirlist.at(igesCount);
+
+		char param[100];
+		char *pnt;
+
+		pnt=ParameterLine.toLocal8Bit().data();
+
+		pnt+=igs.readDelimString(pnt,param);
+
+		switch (igesd->entityType) {
+			case 0: /*Null*/
+				break;
+			case 100: /*Circular arc*/
+				{
+					float x1,y1,x2,y2,x3,y3;
+					float z;
+					pnt+=igs.readDelimString(pnt,param);
+					z=atof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					x1=atof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					y1=atof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					x2=atof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					y2=atof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					x3=atof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					y3=atof(param);
+					CoordinateSystem<float> C;
+					float xC[3];
+					xC[0]=x1; xC[1]=y1; xC[2]=z;
+					C.setCenter(xC);
+					float fmin=atan2(y2-y1,x2-x1);
+					float fmax=atan2(y3-y1,x3-x1);
+					if (fmax<fmin) fmax+=2*3.14159;
+					float rad=sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+					geom->addArc(C,rad,fmin,fmax);
+				}
+				break;
+			case 104: /*Conic section*/
+#if 0
+				{
+					float A,B,C,D,E,F;
+					float Z;
+					float x1,y1,x2,y2;
+
+					if (igesd->formNumber==1) {
+						/*Ellipse*/
+					} else if (igesd->formNumber==2) {
+						/*Hyperbola*/
+					} else if (igesd->formNumber==3) {
+						/*Parabola*/
+						B^2=4AC
+
+						Cy^2+(Bx+E)y+Ax^2+Dx+F=0
+						disc=(Bx+E)^2-4C(Ax^2+Dx+F)
+
+					}
+					t=x0, y0=t^2
+					x=ax0+by0+c
+					y=dx0+ey0+f
+					
+
+
+					Ax^2+Bxy+Cy^2+Dx+Ey+F=0
+
+
+
+				}
+#endif
+				break;
+			case 106: /*Linear Path*/
+				{
+					pnt+=igs.readDelimString(pnt,param);
+					int IP=atoi(param);
+					pnt+=igs.readDelimString(pnt,param);
+					int N=atoi(param);
+					if (IP==1) {
+						pnt+=igs.readDelimString(pnt,param);
+						float Z=atof(param);
+						float X,Y;
+						int j;
+						for (j=0; j<N; j++) {
+							pnt+=igs.readDelimString(pnt,param);
+							X=atof(param);
+							pnt+=igs.readDelimString(pnt,param);
+							Y=atof(param);
+							
+							int gid=geom->addGrid(X,Y,Z);
+							if (j>0) {
+								geom->addLine(gid-1,gid);
+							}
+						}
+					} else if (IP==2) {
+						float X,Y,Z;
+						int j;
+						for (j=0; j<N; j++) {
+							pnt+=igs.readDelimString(pnt,param);
+							X=atof(param);
+							pnt+=igs.readDelimString(pnt,param);
+							Y=atof(param);
+							pnt+=igs.readDelimString(pnt,param);
+							Z=atof(param);
+
+							int gid=geom->addGrid(X,Y,Z);
+							if (j>0) {
+								geom->addLine(gid-1,gid);
+							}
+						}
+					}
+				}
+				break;
+
+			case 110: /*Line Entity*/
+				{
+					float x,y,z;
+					int g1,g2;
+					pnt+=igs.readDelimString(pnt,param);
+					x=atof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					y=atof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					z=atof(param);
+					g1=geom->addGrid(x,y,z);
+					pnt+=igs.readDelimString(pnt,param);
+					x=atof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					y=atof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					z=atof(param);
+					g2=geom->addGrid(x,y,z);
+					geom->addLine(g1,g2);
+				}
+				break;
+			default:
+				qDebug("Parameter %d not implemented yet",igesd->entityType);
+		}
+
+		igesCount++;
+
+
+
+
+		ok=igs.readLine(fp);
 	}
 
 
