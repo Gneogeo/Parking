@@ -36,7 +36,7 @@ public:
 	float radius;
 };
 
-class Arc {
+class ArcCircle {
 public:
 	CoordinateSystem<float> XYZ;
 	float radius;
@@ -107,7 +107,7 @@ public:
 	myVector<Triangle> triangles;
 	myVector<Line> edges;
 	myVector<Circle> circles;
-	myVector<Arc> arcs;
+	myVector<ArcCircle> arcs;
 
 	int pickedGrid;
 

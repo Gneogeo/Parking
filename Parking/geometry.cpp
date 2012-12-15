@@ -1,3 +1,6 @@
+
+
+
 #include "geometry.h"
 #include "stdlib.h"
 #include "stl_reader.h"
@@ -6,7 +9,13 @@
 #include "iges_reader.h"
 #include <qdebug.h>
 
+#ifdef WIN32
+#include <Windows.h>
+#include <WinGDI.h>
+#include <gl/GL.h>
+#else
 #include <GL/glu.h>
+#endif
 
 using namespace std;
 
@@ -17,7 +26,7 @@ using namespace std;
 Geometry::Geometry()
 {
 	hasSmoothNormals=0;
-
+	 
 	pickedGrid=-1;
 
 	edgeStrip=NULL;
@@ -128,7 +137,7 @@ int Geometry::addCircle(const CoordinateSystem<float> XYZ,float radius)
 
 int Geometry::addArc(const CoordinateSystem<float> XYZ,float radius,float fmin,float fmax)
 {
-	Arc T;
+	ArcCircle T;
 	T.XYZ=XYZ;
 	T.radius=radius;
 	T.fmin=fmin;
@@ -1076,7 +1085,7 @@ void Geometry::drawArcs()
 	float df;
 	df=(2*3.14159)/50.;
 	for (i=0; i<arcs.length(); i++) {
-		const Arc & C=arcs.at(i);
+		const ArcCircle & C=arcs.at(i);
 		glBegin(GL_LINE_STRIP);
 		
 		for (f=C.fmin; f<C.fmax; f+=df) {

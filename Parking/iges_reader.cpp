@@ -236,7 +236,7 @@ void readIGES(Geometry *geom,const char *name)
 	while (ok) {
 		if (igs.letterCode!='P') break;
 
-		QString ParameterLine;
+		QString ParameterLine=QString::fromUtf8("");
 		while (ok) {
 			igs.data[64]=0;
 			stripTrailingSpaces(igs.data);
@@ -252,9 +252,10 @@ void readIGES(Geometry *geom,const char *name)
 		igesd=&dirlist.at(igesCount);
 
 		char param[100];
-		char *pnt;
+		char *cpnt,*pnt;
 
-		pnt=ParameterLine.toLocal8Bit().data();
+		cpnt=strdup(ParameterLine.toUtf8().data());
+		pnt=cpnt;
 
 		pnt+=igs.readDelimString(pnt,param);
 
@@ -392,7 +393,7 @@ void readIGES(Geometry *geom,const char *name)
 		igesCount++;
 
 
-
+		free(pnt);
 
 		ok=igs.readLine(fp);
 	}
