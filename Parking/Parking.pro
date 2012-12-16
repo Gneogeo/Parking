@@ -6,6 +6,8 @@
 
 QT       += core gui opengl
 
+LIBS += -lGLU
+
 TARGET = Parking
 TEMPLATE = app
 

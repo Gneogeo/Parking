@@ -1,6 +1,8 @@
 #ifndef MYVECTOR_H
 #define MYVECTOR_H
 
+#include <cstring>
+
 template <typename T> class myVector {
         myVector(myVector &x); //deactivated copy-constructor
         unsigned int mem;
