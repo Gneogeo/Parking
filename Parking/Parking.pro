@@ -10,7 +10,8 @@ TARGET = Parking
 TEMPLATE = app
 
 
-SOURCES += chunck3ds_reader.cpp  \
+SOURCES += bspline.cpp \
+	   chunck3ds_reader.cpp  \
 	   dxf_reader.cpp  \
 	   geometry.cpp  \
 	   iges_reader.cpp \
@@ -19,12 +20,14 @@ SOURCES += chunck3ds_reader.cpp  \
 	   parking.cpp \
 	   stl_reader.cpp
 
-HEADERS  += chunck3ds_reader.h  \
+HEADERS  += bspline.h \
+	    chunck3ds_reader.h  \
 	    coord_system.h \
 	    dxf_reader.h  \
 	    geometry.h  \
 	    iges_reader.h \
 	    mgl.h  \
+	    myvector.h  \
 	    parking.h	\
 	    stl_reader.h  \
 	    vector3d.h

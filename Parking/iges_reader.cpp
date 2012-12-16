@@ -232,21 +232,38 @@ void readIGES(Geometry *geom,const char *name)
 
 	}
 
+
 	int igesCount=0;
+	QString ParameterLine;
+	QString nextParameterLine;
+
+	nextParameterLine=QString::fromLocal8Bit("");
+
 	while (ok) {
 		if (igs.letterCode!='P') break;
 
-		QString ParameterLine=QString::fromUtf8("");
+		int paramId;
+		ParameterLine=nextParameterLine;
+		nextParameterLine=QString::fromLocal8Bit("");
 		while (ok) {
+			if (igs.letterCode!='P') break;
+
+			char paramIdstr[9]={0};
+			memcpy(paramIdstr,&igs.data[64],8);
+			paramIdstr[8]=0;
+			paramId=atoi(paramIdstr);
+
 			igs.data[64]=0;
 			stripTrailingSpaces(igs.data);
-			int len=strlen(igs.data);
+
+			if (paramId>2*igesCount+1) {
+				nextParameterLine.append(QString::fromLocal8Bit(igs.data));
+				break;
+			}
 			ParameterLine.append(QString::fromLocal8Bit(igs.data));
-/*TODO : What can I do if Record delimiter is the same as parameter delimiter? */
-			if (len && igs.data[len-1]==RecordDelimiterChar) break;
 			ok=igs.readLine(fp);
 		}
-//		qDebug("Parameter Line : '%s'",ParameterLine.toLocal8Bit().data());
+		qDebug("Parameter Line : '%s'",ParameterLine.toLocal8Bit().data());
 		
 		IGES_directory *igesd;
 		igesd=&dirlist.at(igesCount);
@@ -254,7 +271,7 @@ void readIGES(Geometry *geom,const char *name)
 		char param[100];
 		char *cpnt,*pnt;
 
-		cpnt=strdup(ParameterLine.toUtf8().data());
+		cpnt=strdup(ParameterLine.toLocal8Bit().data());
 		pnt=cpnt;
 
 		pnt+=igs.readDelimString(pnt,param);
@@ -311,12 +328,49 @@ void readIGES(Geometry *geom,const char *name)
 
 					}
 					t=x0, y0=t^2
-					x=ax0+by0+c
-					y=dx0+ey0+f
+					x=cx0+sy0+a
+					y=-sx0+cy0+b
 					
 
 
 					Ax^2+Bxy+Cy^2+Dx+Ey+F=0
+
+					A(c^2x0^2+s^2y0^2+a^2+2csx0y0+2say0+2acx0)
+					+B(-scx0^2+(s^2+c^2)x0y0+(as+bc)x0+csy0^2+(ac+bs)y0+ab)
+					+C(s^2x0^2+c^2y0^2+b^2-2scx0y0+2bcy0-2bsx0)
+					+D(cx0+sy0+a)
+					+E(-sx0+cy0+b)
+					+F
+
+					(Ac^2-Bsc+Cs^2)x0^2
+					+(As^2+Bsc+Cc^2)y0^2
+					+(2Asc+B(s^2+c^2)-2Csc)x0y0
+					+(2Aac+B(as+bc)-2Cbs+Dc-Es)x0
+					+(2As+B(ac+bs)+2Cbc+Ds+Ec)y0
+					+(Aa^2+Bab+Cb^2+Da+Eb+F)
+
+					1: s^2+c^2=1
+
+sc=B/(2(C-A))
+
+
+yparxei eutheia y=ax+b <->x=y/a-b/a
+
+A(y/a-b/a)^2+B(y/a-b/a)(ax+b)+C(ax+b)^2+D(y/a-b/a)+E(ax+b)+F= Ax^2+Bxy+Cy^2+Dx+Ey+F
+A(y^2/a^2+b^2/a^2-2yb/a^2)+B(xy+by/a-bx-b^2/a)+C(a^2x^2+b^2+2abx)+D(y/a-b/a)+E(ax+b)+F
+
+A(b^2/a^2)+B(-b^2/a)+C(b^2)-Db/a+Eb+F
+
+(Ca^2)x^2+(B)xy+(A/a^2)y^2+(-Bb+2Cab+Ea)x+(Bb/a-2Ab/a^2+D/a)y
+
+
+a^2=A/C
+2Ab+EA/C=Da+Bab
+
+
+
+
+					
 
 
 
@@ -386,6 +440,130 @@ void readIGES(Geometry *geom,const char *name)
 					geom->addLine(g1,g2);
 				}
 				break;
+			case 112: /*Spline*/
+				{
+					int N;
+					float Px[4],Py[4],Pz[4];
+					float *T;
+					pnt+=igs.readDelimString(pnt,param);
+					pnt+=igs.readDelimString(pnt,param);
+					pnt+=igs.readDelimString(pnt,param);
+					pnt+=igs.readDelimString(pnt,param);
+					N=atoi(param);
+
+					int j;
+
+					T=new float[N+1];
+					for (j=0; j<=N; j++) {
+						pnt+=igs.readDelimString(pnt,param);
+						T[j]=atof(param);
+					}
+					for (j=0; j<N; j++) {
+						pnt+=igs.readDelimString(pnt,param); Px[0]=atof(param);
+						pnt+=igs.readDelimString(pnt,param); Px[1]=atof(param);
+						pnt+=igs.readDelimString(pnt,param); Px[2]=atof(param);
+						pnt+=igs.readDelimString(pnt,param); Px[3]=atof(param);
+
+						pnt+=igs.readDelimString(pnt,param); Py[0]=atof(param);
+						pnt+=igs.readDelimString(pnt,param); Py[1]=atof(param);
+						pnt+=igs.readDelimString(pnt,param); Py[2]=atof(param);
+						pnt+=igs.readDelimString(pnt,param); Py[3]=atof(param);
+
+						pnt+=igs.readDelimString(pnt,param); Pz[0]=atof(param);
+						pnt+=igs.readDelimString(pnt,param); Pz[1]=atof(param);
+						pnt+=igs.readDelimString(pnt,param); Pz[2]=atof(param);
+						pnt+=igs.readDelimString(pnt,param); Pz[3]=atof(param);
+
+						float s,s2,s3;
+						s=T[j+1]-T[j];
+						s2=s*s;
+						s3=s*s*s;
+						Px[1]/=s; Px[2]/=s2; Px[3]/=s3;
+						Py[1]/=s; Py[2]/=s2; Py[3]/=s3;
+						Pz[1]/=s; Pz[2]/=s2; Pz[3]/=s3;
+					}
+					delete []T;
+				
+				}
+				break;
+			case 126:
+				{ /*B-Spline curves*/
+					BSpline BS={0};
+
+					pnt+=igs.readDelimString(pnt,param);
+					BS.K=atoi(param);
+					pnt+=igs.readDelimString(pnt,param);
+					BS.M=atoi(param);
+					int N=1+BS.K-BS.M;
+					pnt+=igs.readDelimString(pnt,param);
+					pnt+=igs.readDelimString(pnt,param);
+					pnt+=igs.readDelimString(pnt,param);
+					pnt+=igs.readDelimString(pnt,param);
+					BS.T=(float*)calloc(N+2*BS.M+1,sizeof(float));
+					BS.W=(float*)calloc(BS.K+1,sizeof(float));
+					BS.P=(float(*)[3])calloc(BS.K+1,sizeof(float[3]));
+
+					int j;
+					for (j=0; j<N+2*BS.M+1; j++) {
+						pnt+=igs.readDelimString(pnt,param);
+						BS.T[j]=atof(param);
+					}
+					for (j=0; j<BS.K+1; j++) {
+						pnt+=igs.readDelimString(pnt,param);
+						BS.W[j]=atof(param);
+					}
+					for (j=0; j<BS.K+1; j++) {
+						pnt+=igs.readDelimString(pnt,param);
+						BS.P[j][0]=atof(param);
+						pnt+=igs.readDelimString(pnt,param);
+						BS.P[j][1]=atof(param);
+						pnt+=igs.readDelimString(pnt,param);
+						BS.P[j][2]=atof(param);
+					}
+					pnt+=igs.readDelimString(pnt,param);
+					BS.V[0]=atof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					BS.V[1]=atof(param);
+
+					geom->addBSpline(BS);
+
+
+					/*
+
+T(-M),..,T(0),...,T(N),...,T(N+M)
+V(0)<t<V(1), T(0)<V(0)<V(1)<T(N)
+
+G(t)=S(W(i)P(i)bi(t)) / S(W(i)bi(t))
+W: Weight
+P: Control point
+b: bspline basis function b: M degree polynomial
+
+K
+M
+T(-M)
+..
+T(N+M)
+W(0)
+..
+W(K)
+X(0)
+Y(0)
+Z(0)
+...
+X(K)
+Y(K)
+Z(K)
+V(0)
+V(1)
+
+
+
+
+
+						*/
+
+				}
+				break;
 			default:
 				qDebug("Parameter %d not implemented yet",igesd->entityType);
 		}
@@ -393,7 +571,7 @@ void readIGES(Geometry *geom,const char *name)
 		igesCount++;
 
 
-		free(pnt);
+		free(cpnt);
 
 		ok=igs.readLine(fp);
 	}

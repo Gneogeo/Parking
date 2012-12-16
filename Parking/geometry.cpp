@@ -1,6 +1,3 @@
-
-
-
 #include "geometry.h"
 #include "stdlib.h"
 #include "stl_reader.h"
@@ -146,6 +143,21 @@ int Geometry::addArc(const CoordinateSystem<float> XYZ,float radius,float fmin,f
 	return arcs.length()-1;
 }
 
+int Geometry::addSpline(float Px[4],float Py[4],float Pz[4])
+{
+	Spline T;
+	memcpy(T.Px,Px,sizeof(T.Px));
+	memcpy(T.Py,Py,sizeof(T.Py));
+	memcpy(T.Pz,Pz,sizeof(T.Pz));
+	splines.append(T);
+	return splines.length()-1;
+}
+
+int Geometry::addBSpline(const BSpline &BS)
+{
+	bsplines.append(BS);
+	return bsplines.length()-1;
+}
 
 void Geometry::calcTrianglesNormals()
 {
@@ -1106,6 +1118,46 @@ void Geometry::drawArcs()
 
 }
 
+void Geometry::drawSplines()
+{
+	glColor4fv(lineStripColor);
+	int i;
+	float s;
+	float s2,s3;
+	float ds=0.01;
+	float X[3];
+	for (i=0; i<splines.length(); i++) {
+		const Spline & S=splines.at(i);
+		glBegin(GL_LINE_STRIP);
+		for (s=0; s<=1; s+=ds) {
+			s2=s*s;
+			s3=s2*s;
+			X[0]=S.Px[0]+S.Px[1]*s+S.Px[2]*s2+S.Px[3]*s3;
+			X[1]=S.Py[0]+S.Py[1]*s+S.Py[2]*s2+S.Py[3]*s3;
+			X[2]=S.Pz[0]+S.Pz[1]*s+S.Pz[2]*s2+S.Pz[3]*s3;
+			glVertex3fv(X);
+		}
+		glEnd();
+	}
+}
 
+void Geometry::drawBSplines()
+{
+	glColor4fv(lineStripColor);
+	int i;
+	float t;
+	float dt=0.01;
+	float X[3];
+	for (i=0; i<bsplines.length(); i++) {
+		const BSpline & BS=bsplines.at(i);
+		glBegin(GL_LINE_STRIP);
+		for (t=BS.V[0]; t<=BS.V[1]; t+=dt) {
+			if (BS.getParamPoint(t,X)) {
+				glVertex3fv(X);
+			}
+		}
+		glEnd();
+	}
+}
 
 

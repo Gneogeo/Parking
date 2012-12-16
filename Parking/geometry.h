@@ -8,7 +8,9 @@
 #include <cstdlib>
 #include "vector3d.h"
 #include "coord_system.h"
+#include "bspline.h"
 
+#include "myvector.h"
 
 class Grid {
 public:
@@ -44,55 +46,11 @@ public:
 	float fmax;
 };
 
-template <typename T> class myVector {
-	myVector(myVector &x); //deactivated copy-constructor
-	unsigned int mem;
-	unsigned int len;
-        T *data;
-
+class Spline {
 public:
-
-	
-
-	myVector() {
-		data=0; len=0; mem=0;
-	}
-	~myVector() {
-		free(data);
-	}
-
-	void append(const T &elem) {
-		if (mem==len) {
-			if (mem==0) mem=1;
-			else mem*=2;
-			data=(T*)realloc(data,mem*sizeof(T));
-		}
-		memcpy(&data[len],&elem,sizeof(T));
-		len++;
-	}
-
-	void clear() {
-		len=0;
-	}
-
-	void truncate() {
-		free(data); data=0; len=0; mem=0;
-	}
-	void truncateInto(unsigned int ln) {
-		if (ln<len) len=ln;
-	}
-
-	unsigned int length() {return len;}
-
-	const T *getData() {return data;}
-
-	T &at(unsigned int i) {return data[i];}
-
-	void Qsort(int (*compareFunc)(const T *k1,const T *k2)) {
-		::qsort(data,len,sizeof(T),( int(*)(const void *,const void *))compareFunc);
-	}
-
-	
+	float Px[4];
+	float Py[4];
+	float Pz[4];
 };
 
 
@@ -108,6 +66,8 @@ public:
 	myVector<Line> edges;
 	myVector<Circle> circles;
 	myVector<ArcCircle> arcs;
+	myVector<Spline> splines;
+	myVector<BSpline> bsplines;
 
 	int pickedGrid;
 
@@ -125,6 +85,8 @@ public:
 	int addTriangle(int n1,int n2,int n3,float normal[3]);
 	int addCircle(const CoordinateSystem<float> XYZ,float radius);
 	int addArc(const CoordinateSystem<float> XYZ,float radius,float fmin,float fmax);
+	int addSpline(float Px[4],float Py[4],float Pz[4]);
+	int addBSpline(const BSpline &bsplines);
 	
 	void shrinkGeometry();
 	void compressGrids();
@@ -158,6 +120,8 @@ public:
 
 	void drawCircles();
 	void drawArcs();
+	void drawSplines();
+	void drawBSplines();
 };
 
 

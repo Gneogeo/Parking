@@ -620,6 +620,8 @@ void GLWidget::paintGL()
 		geom->drawLineStrip();
 		geom->drawCircles();
 		geom->drawArcs();
+		geom->drawSplines();
+		geom->drawBSplines();
 
 
 		glPointSize(4);
