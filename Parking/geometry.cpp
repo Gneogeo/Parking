@@ -1144,17 +1144,21 @@ void Geometry::drawSplines()
 void Geometry::drawBSplines()
 {
 	glColor4fv(lineStripColor);
-	int i;
+	int i,j;
 	float t;
 	float dt=0.01;
 	float X[3];
 	for (i=0; i<bsplines.length(); i++) {
 		const BSpline & BS=bsplines.at(i);
 		glBegin(GL_LINE_STRIP);
-		for (t=BS.V[0]; t<=BS.V[1]; t+=dt) {
+		for (t=BS.V[0]; t<BS.V[1]; t+=dt) {
 			if (BS.getParamPoint(t,X)) {
 				glVertex3fv(X);
 			}
+		}
+		t=BS.V[1];
+		if (BS.getParamPoint(t,X)) {
+			glVertex3fv(X);
 		}
 		glEnd();
 	}

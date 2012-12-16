@@ -26,7 +26,7 @@ public:
                         else mem*=2;
                         data=(T*)realloc(data,mem*sizeof(T));
                 }
-                memcpy(&data[len],&elem,sizeof(T));
+		data[len]=elem;
                 len++;
         }
 

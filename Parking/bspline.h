@@ -2,7 +2,10 @@
 #define BSPLINE_H
 
 class BSpline {
-public:
+public:	
+	BSpline & operator = (const BSpline &r);
+	~BSpline();
+
 	int K;
 	int M; /* N=1+K-M */
 	float *T; /* -M:N+M */

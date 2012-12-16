@@ -239,6 +239,10 @@ void readIGES(Geometry *geom,const char *name)
 
 	nextParameterLine=QString::fromLocal8Bit("");
 
+	QMap<int,CoordinateSystem<float> > crdMap;
+
+
+
 	while (ok) {
 		if (igs.letterCode!='P') break;
 
@@ -263,7 +267,7 @@ void readIGES(Geometry *geom,const char *name)
 			ParameterLine.append(QString::fromLocal8Bit(igs.data));
 			ok=igs.readLine(fp);
 		}
-		qDebug("Parameter Line : '%s'",ParameterLine.toLocal8Bit().data());
+		//qDebug("Parameter Line : '%s'",ParameterLine.toLocal8Bit().data());
 		
 		IGES_directory *igesd;
 		igesd=&dirlist.at(igesCount);
@@ -305,7 +309,8 @@ void readIGES(Geometry *geom,const char *name)
 					float fmax=atan2(y3-y1,x3-x1);
 					if (fmax<fmin) fmax+=2*3.14159;
 					float rad=sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
-					geom->addArc(C,rad,fmin,fmax);
+                                        int arcid=geom->addArc(C,rad,fmin,fmax);
+
 				}
 				break;
 			case 104: /*Conic section*/
@@ -486,25 +491,48 @@ a^2=A/C
 				
 				}
 				break;
+			case 124:
+				/*Coordinate system*/
+				{
+					CoordinateSystem<float> Crd;
+					float x[3],y[3],z[3],c[3];
+					pnt+=igs.readDelimString(pnt,param); x[0]=atof(param);
+					pnt+=igs.readDelimString(pnt,param); y[0]=atof(param);
+					pnt+=igs.readDelimString(pnt,param); z[0]=atof(param);
+					pnt+=igs.readDelimString(pnt,param); c[0]=atof(param);
+					pnt+=igs.readDelimString(pnt,param); x[1]=atof(param);
+					pnt+=igs.readDelimString(pnt,param); y[1]=atof(param);
+					pnt+=igs.readDelimString(pnt,param); z[1]=atof(param);
+					pnt+=igs.readDelimString(pnt,param); c[1]=atof(param);
+					pnt+=igs.readDelimString(pnt,param); x[2]=atof(param);
+					pnt+=igs.readDelimString(pnt,param); y[2]=atof(param);
+					pnt+=igs.readDelimString(pnt,param); z[2]=atof(param);
+					pnt+=igs.readDelimString(pnt,param); c[2]=atof(param);
+					Crd.setAxis(x,y,z);
+					Crd.setCenter(c);
+					crdMap.insert(paramId,Crd);
+
+				}
+				break;
 			case 126:
-				{ /*B-Spline curves*/
+				{ 
+					/*B-Spline curves*/
 					BSpline BS={0};
 
 					pnt+=igs.readDelimString(pnt,param);
 					BS.K=atoi(param);
 					pnt+=igs.readDelimString(pnt,param);
 					BS.M=atoi(param);
-					int N=1+BS.K-BS.M;
 					pnt+=igs.readDelimString(pnt,param);
 					pnt+=igs.readDelimString(pnt,param);
 					pnt+=igs.readDelimString(pnt,param);
 					pnt+=igs.readDelimString(pnt,param);
-					BS.T=(float*)calloc(N+2*BS.M+1,sizeof(float));
+					BS.T=(float*)calloc(BS.K+BS.M+2,sizeof(float));
 					BS.W=(float*)calloc(BS.K+1,sizeof(float));
 					BS.P=(float(*)[3])calloc(BS.K+1,sizeof(float[3]));
 
 					int j;
-					for (j=0; j<N+2*BS.M+1; j++) {
+					for (j=0; j<BS.K+BS.M+2; j++) {
 						pnt+=igs.readDelimString(pnt,param);
 						BS.T[j]=atof(param);
 					}
@@ -526,41 +554,6 @@ a^2=A/C
 					BS.V[1]=atof(param);
 
 					geom->addBSpline(BS);
-
-
-					/*
-
-T(-M),..,T(0),...,T(N),...,T(N+M)
-V(0)<t<V(1), T(0)<V(0)<V(1)<T(N)
-
-G(t)=S(W(i)P(i)bi(t)) / S(W(i)bi(t))
-W: Weight
-P: Control point
-b: bspline basis function b: M degree polynomial
-
-K
-M
-T(-M)
-..
-T(N+M)
-W(0)
-..
-W(K)
-X(0)
-Y(0)
-Z(0)
-...
-X(K)
-Y(K)
-Z(K)
-V(0)
-V(1)
-
-
-
-
-
-						*/
 
 				}
 				break;
