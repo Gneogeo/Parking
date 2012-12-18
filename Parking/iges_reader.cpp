@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <qdebug.h>
-
+#include <QSet>
 
 static void stripTrailingSpaces(char *d)
 {
@@ -147,60 +147,60 @@ void readIGES(Geometry *geom,const char *name)
 	char GlobalParam[26][100];
 
 
-    QString globalData=QString::fromUtf8("");
-    while (ok) {
-        if (igs.letterCode!='G') break;
-        stripTrailingSpaces(igs.data);
-        globalData.append(QString::fromUtf8(igs.data));
-        ok=igs.readLine(fp);
-    }
-    if (globalData.count()!=0) {
-        char *cpnt,*pnt;
-        cpnt=strdup(globalData.toUtf8().data());
-        pnt=cpnt;
-        if (globalParamCount==0) {
-            if (pnt[0]==',' && pnt[1]==',') {
-                globalParamCount+=2;
-                pnt+=2;
-            } else if (pnt[0]=='1' && pnt[1]=='H' && pnt[2]==pnt[3] && pnt[3] !=pnt[4] && pnt[4]=='1' && pnt[5]=='H') {
-                ParameterDelimiterChar=pnt[2];
-                RecordDelimiterChar=pnt[6];
-                pnt=&pnt[8];
-                globalParamCount+=2;
-            } else if (pnt[0]=='1' && pnt[1]=='H' && pnt[2]==pnt[3] && pnt[3]==pnt[4]) {
-                ParameterDelimiterChar=pnt[2];
-                pnt=&pnt[5];
-                globalParamCount+=2;
-            } else if (pnt[0]==',' && pnt[1]=='1' && pnt[2]=='H' && pnt[4]==',') {
-                RecordDelimiterChar=pnt[3];
-                pnt=&pnt[5];
-                globalParamCount+=2;
-            }
-        }
-        while (pnt[0]!=0) {
-            switch (globalParamCount) {
-                case 2: case 3: case 4: case 5:
-                case 11:
-                case 14:
-                case 17:
-                case 20: case 21:
-                case 24: case 25:
-                    pnt+=readHollerithString(pnt,GlobalParam[globalParamCount]);
-                    if (pnt[0]!=0) {
-                        pnt++;
-                    }
-                    break;
-                default:
-                    pnt+=igs.readDelimString(pnt,GlobalParam[globalParamCount]);
-                    break;
+	QString globalData=QString::fromUtf8("");
+	while (ok) {
+		if (igs.letterCode!='G') break;
+		stripTrailingSpaces(igs.data);
+		globalData.append(QString::fromUtf8(igs.data));
+		ok=igs.readLine(fp);
+	}
+	if (globalData.count()!=0) {
+		char *cpnt,*pnt;
+		cpnt=strdup(globalData.toUtf8().data());
+		pnt=cpnt;
+		if (globalParamCount==0) {
+			if (pnt[0]==',' && pnt[1]==',') {
+				globalParamCount+=2;
+				pnt+=2;
+			} else if (pnt[0]=='1' && pnt[1]=='H' && pnt[2]==pnt[3] && pnt[3] !=pnt[4] && pnt[4]=='1' && pnt[5]=='H') {
+				ParameterDelimiterChar=pnt[2];
+				RecordDelimiterChar=pnt[6];
+				pnt=&pnt[8];
+				globalParamCount+=2;
+			} else if (pnt[0]=='1' && pnt[1]=='H' && pnt[2]==pnt[3] && pnt[3]==pnt[4]) {
+				ParameterDelimiterChar=pnt[2];
+				pnt=&pnt[5];
+				globalParamCount+=2;
+			} else if (pnt[0]==',' && pnt[1]=='1' && pnt[2]=='H' && pnt[4]==',') {
+				RecordDelimiterChar=pnt[3];
+				pnt=&pnt[5];
+				globalParamCount+=2;
+			}
+		}
+		while (pnt[0]!=0) {
+			switch (globalParamCount) {
+				case 2: case 3: case 4: case 5:
+				case 11:
+				case 14:
+				case 17:
+				case 20: case 21:
+				case 24: case 25:
+					pnt+=readHollerithString(pnt,GlobalParam[globalParamCount]);
+					if (pnt[0]!=0) {
+						pnt++;
+					}
+					break;
+				default:
+					pnt+=igs.readDelimString(pnt,GlobalParam[globalParamCount]);
+					break;
 
-            }
-            qDebug("Parameter %d is '%s'",globalParamCount,GlobalParam[globalParamCount]);
-            globalParamCount++;
-        }
+			}
+			qDebug("Parameter %d is '%s'",globalParamCount,GlobalParam[globalParamCount]);
+			globalParamCount++;
+		}
 
-        free(cpnt);
-    }
+		free(cpnt);
+	}
 
 	myVector<IGES_directory> dirlist;
 	while (ok) {
@@ -218,9 +218,9 @@ void readIGES(Geometry *geom,const char *name)
 		if (!ok) break;
 		if (igs.letterCode!='D') break;
 
-                pnt=igs.data;
+		pnt=igs.data;
 
-                for (k=9; k<18; k++) {
+		for (k=9; k<18; k++) {
 			memcpy(Directory[k],pnt,8);
 			Directory[k][8]=0;
 			pnt+=8;
@@ -232,7 +232,7 @@ void readIGES(Geometry *geom,const char *name)
 
 
 
-		
+
 		ok=igs.readLine(fp);
 
 	}
@@ -245,7 +245,9 @@ void readIGES(Geometry *geom,const char *name)
 	nextParameterLine=QString::fromLocal8Bit("");
 
 	QMap<int,CoordinateSystem<float> > crdMap;
-
+	QMap<int,int> depcrdMap;
+	QMap<int,int> arcCoordMap;
+	QMap<int,int> gridCoordMap;
 
 
 	while (ok) {
@@ -273,7 +275,7 @@ void readIGES(Geometry *geom,const char *name)
 			ok=igs.readLine(fp);
 		}
 		//qDebug("Parameter Line : '%s'",ParameterLine.toLocal8Bit().data());
-		
+
 		IGES_directory *igesd;
 		igesd=&dirlist.at(igesCount);
 
@@ -314,7 +316,10 @@ void readIGES(Geometry *geom,const char *name)
 					float fmax=atan2(y3-y1,x3-x1);
 					if (fmax<fmin) fmax+=2*3.14159;
 					float rad=sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
-                                        int arcid=geom->addArc(C,rad,fmin,fmax);
+					int arcid=geom->addArc(C,rad,fmin,fmax);
+					if (igesd->transMatrix!=0) {
+						arcCoordMap.insert(arcid,igesd->transMatrix);
+					}
 
 				}
 				break;
@@ -333,54 +338,54 @@ void readIGES(Geometry *geom,const char *name)
 						/*Parabola*/
 						B^2=4AC
 
-						Cy^2+(Bx+E)y+Ax^2+Dx+F=0
-						disc=(Bx+E)^2-4C(Ax^2+Dx+F)
+							Cy^2+(Bx+E)y+Ax^2+Dx+F=0
+							disc=(Bx+E)^2-4C(Ax^2+Dx+F)
 
 					}
 					t=x0, y0=t^2
-					x=cx0+sy0+a
-					y=-sx0+cy0+b
-					
-
-
-					Ax^2+Bxy+Cy^2+Dx+Ey+F=0
-
-					A(c^2x0^2+s^2y0^2+a^2+2csx0y0+2say0+2acx0)
-					+B(-scx0^2+(s^2+c^2)x0y0+(as+bc)x0+csy0^2+(ac+bs)y0+ab)
-					+C(s^2x0^2+c^2y0^2+b^2-2scx0y0+2bcy0-2bsx0)
-					+D(cx0+sy0+a)
-					+E(-sx0+cy0+b)
-					+F
-
-					(Ac^2-Bsc+Cs^2)x0^2
-					+(As^2+Bsc+Cc^2)y0^2
-					+(2Asc+B(s^2+c^2)-2Csc)x0y0
-					+(2Aac+B(as+bc)-2Cbs+Dc-Es)x0
-					+(2As+B(ac+bs)+2Cbc+Ds+Ec)y0
-					+(Aa^2+Bab+Cb^2+Da+Eb+F)
-
-					1: s^2+c^2=1
-
-sc=B/(2(C-A))
-
-
-yparxei eutheia y=ax+b <->x=y/a-b/a
-
-A(y/a-b/a)^2+B(y/a-b/a)(ax+b)+C(ax+b)^2+D(y/a-b/a)+E(ax+b)+F= Ax^2+Bxy+Cy^2+Dx+Ey+F
-A(y^2/a^2+b^2/a^2-2yb/a^2)+B(xy+by/a-bx-b^2/a)+C(a^2x^2+b^2+2abx)+D(y/a-b/a)+E(ax+b)+F
-
-A(b^2/a^2)+B(-b^2/a)+C(b^2)-Db/a+Eb+F
-
-(Ca^2)x^2+(B)xy+(A/a^2)y^2+(-Bb+2Cab+Ea)x+(Bb/a-2Ab/a^2+D/a)y
-
-
-a^2=A/C
-2Ab+EA/C=Da+Bab
+						x=cx0+sy0+a
+						y=-sx0+cy0+b
 
 
 
+						Ax^2+Bxy+Cy^2+Dx+Ey+F=0
 
-					
+						A(c^2x0^2+s^2y0^2+a^2+2csx0y0+2say0+2acx0)
+						+B(-scx0^2+(s^2+c^2)x0y0+(as+bc)x0+csy0^2+(ac+bs)y0+ab)
+						+C(s^2x0^2+c^2y0^2+b^2-2scx0y0+2bcy0-2bsx0)
+						+D(cx0+sy0+a)
+						+E(-sx0+cy0+b)
+						+F
+
+						(Ac^2-Bsc+Cs^2)x0^2
+						+(As^2+Bsc+Cc^2)y0^2
+						+(2Asc+B(s^2+c^2)-2Csc)x0y0
+						+(2Aac+B(as+bc)-2Cbs+Dc-Es)x0
+						+(2As+B(ac+bs)+2Cbc+Ds+Ec)y0
+						+(Aa^2+Bab+Cb^2+Da+Eb+F)
+
+						1: s^2+c^2=1
+
+						sc=B/(2(C-A))
+
+
+						yparxei eutheia y=ax+b <->x=y/a-b/a
+
+						A(y/a-b/a)^2+B(y/a-b/a)(ax+b)+C(ax+b)^2+D(y/a-b/a)+E(ax+b)+F= Ax^2+Bxy+Cy^2+Dx+Ey+F
+						A(y^2/a^2+b^2/a^2-2yb/a^2)+B(xy+by/a-bx-b^2/a)+C(a^2x^2+b^2+2abx)+D(y/a-b/a)+E(ax+b)+F
+
+						A(b^2/a^2)+B(-b^2/a)+C(b^2)-Db/a+Eb+F
+
+						(Ca^2)x^2+(B)xy+(A/a^2)y^2+(-Bb+2Cab+Ea)x+(Bb/a-2Ab/a^2+D/a)y
+
+
+						a^2=A/C
+						2Ab+EA/C=Da+Bab
+
+
+
+
+
 
 
 
@@ -403,8 +408,11 @@ a^2=A/C
 							X=atof(param);
 							pnt+=igs.readDelimString(pnt,param);
 							Y=atof(param);
-							
+
 							int gid=geom->addGrid(X,Y,Z);
+							if (igesd->transMatrix!=0) {
+								gridCoordMap.insert(gid,igesd->transMatrix);
+							}
 							if (j>0) {
 								geom->addLine(gid-1,gid);
 							}
@@ -421,6 +429,9 @@ a^2=A/C
 							Z=atof(param);
 
 							int gid=geom->addGrid(X,Y,Z);
+							if (igesd->transMatrix!=0) {
+								gridCoordMap.insert(gid,igesd->transMatrix);
+							}
 							if (j>0) {
 								geom->addLine(gid-1,gid);
 							}
@@ -440,6 +451,9 @@ a^2=A/C
 					pnt+=igs.readDelimString(pnt,param);
 					z=atof(param);
 					g1=geom->addGrid(x,y,z);
+					if (igesd->transMatrix!=0) {
+						gridCoordMap.insert(g1,igesd->transMatrix);
+					}
 					pnt+=igs.readDelimString(pnt,param);
 					x=atof(param);
 					pnt+=igs.readDelimString(pnt,param);
@@ -447,6 +461,9 @@ a^2=A/C
 					pnt+=igs.readDelimString(pnt,param);
 					z=atof(param);
 					g2=geom->addGrid(x,y,z);
+					if (igesd->transMatrix!=0) {
+						gridCoordMap.insert(g2,igesd->transMatrix);
+					}
 					geom->addLine(g1,g2);
 				}
 				break;
@@ -493,7 +510,7 @@ a^2=A/C
 						Pz[1]/=s; Pz[2]/=s2; Pz[3]/=s3;
 					}
 					delete []T;
-				
+
 				}
 				break;
 			case 124:
@@ -515,7 +532,10 @@ a^2=A/C
 					pnt+=igs.readDelimString(pnt,param); c[2]=atof(param);
 					Crd.setAxis(x,y,z);
 					Crd.setCenter(c);
-					crdMap.insert(paramId,Crd);
+					crdMap.insert(2*igesCount+1,Crd);
+					if (igesd->transMatrix!=0) {
+						depcrdMap.insert(2*igesCount+1,igesd->transMatrix);
+					}
 
 				}
 				break;
@@ -574,8 +594,67 @@ a^2=A/C
 		ok=igs.readLine(fp);
 	}
 
+        /*Coord fixing*/
+	
+	QMap<int,int>::iterator it;
+	for (it=depcrdMap.begin(); it!=depcrdMap.end(); ++it) {
+		int c1_id,c2_id;
+		c1_id=it.key();
+		c2_id=it.value();
+		if (c1_id!=0) {
+			if (crdMap.find(c1_id)!=crdMap.end()) {
+				CoordinateSystem<float> c1=crdMap.find(c1_id).value();
 
-	/*TODO*/
+				QSet<int> sett;
+				sett.insert(c1_id);
+				sett.insert(c2_id);
+				for (;;) {
+					if (crdMap.find(c2_id)==crdMap.end()) break;
+					CoordinateSystem<float> c2=crdMap.find(c2_id).value();
+
+					c2.fromLocalToGlobal(&c1);
+
+					if (depcrdMap.find(c2_id)==depcrdMap.end()) break;
+					c2_id=depcrdMap.find(c2_id).value();
+
+					if (sett.contains(c2_id)) break;
+					sett.insert(c2_id);
+				}
+			}
+		}
+	}
+	
+	for (it=arcCoordMap.begin(); it!=arcCoordMap.end(); ++it) {
+		int c1_id,c2_id;
+		c1_id=it.key();
+		c2_id=it.value();
+
+		ArcCircle *T=&geom->arcs.at( it.key() );
+
+		if (crdMap.find(c2_id)!=crdMap.end()) {
+			CoordinateSystem<float> c=crdMap.find(c2_id).value();
+
+			c.fromLocalToGlobal(&T->XYZ);
+		}
+	}
+
+	for (it=gridCoordMap.begin(); it!=gridCoordMap.end(); ++it) {
+		int c1_id,c2_id;
+		c1_id=it.key();
+		c2_id=it.value();
+
+
+		Grid *G=&geom->grids.at( it.key() );
+
+		if (crdMap.find(c2_id)!=crdMap.end()) {
+			CoordinateSystem<float> c=crdMap.find(c2_id).value();
+
+			float tmp[3];
+			c.fromLocalToGlobal(tmp,G->coords);
+			vec_copy(G->coords,tmp);
+		}
+	}
+	
 
 	fclose(fp);
 }
