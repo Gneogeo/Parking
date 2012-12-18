@@ -147,55 +147,60 @@ void readIGES(Geometry *geom,const char *name)
 	char GlobalParam[26][100];
 
 
-	while (ok) {
-		if (igs.letterCode!='G') break;
-		
-		stripTrailingSpaces(igs.data);
-		char *pnt=igs.data;
-		if (globalParamCount==0) {
-			if (pnt[0]==',' && pnt[1]==',') {
-				globalParamCount+=2;
-				pnt+=2;
-			} else if (pnt[0]=='1' && pnt[1]=='H' && pnt[2]==pnt[3] && pnt[3] !=pnt[4] && pnt[4]=='1' && pnt[5]=='H') {
-				ParameterDelimiterChar=pnt[2];
-				RecordDelimiterChar=pnt[6];
-				pnt=&pnt[8];
-				globalParamCount+=2;
-			} else if (pnt[0]=='1' && pnt[1]=='H' && pnt[2]==pnt[3] && pnt[3]==pnt[4]) {
-				ParameterDelimiterChar=pnt[2];
-				pnt=&pnt[5];
-				globalParamCount+=2;
-			} else if (pnt[0]==',' && pnt[1]=='1' && pnt[2]=='H' && pnt[4]==',') {
-				RecordDelimiterChar=pnt[3];
-				pnt=&pnt[5];
-				globalParamCount+=2;
-			}
-		}
-		while (pnt[0]!=0) {
-			switch (globalParamCount) {
-				case 2: case 3: case 4: case 5:
-				case 11:
-				case 14:
-				case 17:
-				case 20: case 21:
-				case 24: case 25:
-					pnt+=readHollerithString(pnt,GlobalParam[globalParamCount]);
-					if (pnt[0]!=0) {
-						pnt++;
-					}
-					break;
-				default:
-					pnt+=igs.readDelimString(pnt,GlobalParam[globalParamCount]);
-					break;
+    QString globalData=QString::fromUtf8("");
+    while (ok) {
+        if (igs.letterCode!='G') break;
+        stripTrailingSpaces(igs.data);
+        globalData.append(QString::fromUtf8(igs.data));
+        ok=igs.readLine(fp);
+    }
+    if (globalData.count()!=0) {
+        char *cpnt,*pnt;
+        cpnt=strdup(globalData.toUtf8().data());
+        pnt=cpnt;
+        if (globalParamCount==0) {
+            if (pnt[0]==',' && pnt[1]==',') {
+                globalParamCount+=2;
+                pnt+=2;
+            } else if (pnt[0]=='1' && pnt[1]=='H' && pnt[2]==pnt[3] && pnt[3] !=pnt[4] && pnt[4]=='1' && pnt[5]=='H') {
+                ParameterDelimiterChar=pnt[2];
+                RecordDelimiterChar=pnt[6];
+                pnt=&pnt[8];
+                globalParamCount+=2;
+            } else if (pnt[0]=='1' && pnt[1]=='H' && pnt[2]==pnt[3] && pnt[3]==pnt[4]) {
+                ParameterDelimiterChar=pnt[2];
+                pnt=&pnt[5];
+                globalParamCount+=2;
+            } else if (pnt[0]==',' && pnt[1]=='1' && pnt[2]=='H' && pnt[4]==',') {
+                RecordDelimiterChar=pnt[3];
+                pnt=&pnt[5];
+                globalParamCount+=2;
+            }
+        }
+        while (pnt[0]!=0) {
+            switch (globalParamCount) {
+                case 2: case 3: case 4: case 5:
+                case 11:
+                case 14:
+                case 17:
+                case 20: case 21:
+                case 24: case 25:
+                    pnt+=readHollerithString(pnt,GlobalParam[globalParamCount]);
+                    if (pnt[0]!=0) {
+                        pnt++;
+                    }
+                    break;
+                default:
+                    pnt+=igs.readDelimString(pnt,GlobalParam[globalParamCount]);
+                    break;
 
-			}
-			qDebug("Parameter %d is '%s'",globalParamCount,GlobalParam[globalParamCount]);
-			globalParamCount++;
-		}
+            }
+            qDebug("Parameter %d is '%s'",globalParamCount,GlobalParam[globalParamCount]);
+            globalParamCount++;
+        }
 
-
-		ok=igs.readLine(fp);
-	}
+        free(cpnt);
+    }
 
 	myVector<IGES_directory> dirlist;
 	while (ok) {

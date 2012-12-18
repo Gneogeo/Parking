@@ -4,17 +4,16 @@
 #include <stdlib.h>
 #include <cstring>
 
-static float calc_B(float t,float *T,int n)
+static float calc_B(float t,float *T,int n,float *btemp)
 {
 	if (n<2) return 0;
 
 	int i,j;
-	float *b;
-	b=new float[n-1];
+
 	for (i=0; i<n-1; i++) {
-		if (t>=T[i] && t<=T[i+1]) b[i]=1;
-		else if (T[i]==T[i+1] && t==T[i]) b[i]=1;
-		else b[i]=0;
+        if (t>=T[i] && t<=T[i+1]) btemp[i]=1;
+        else if (T[i]==T[i+1] && t==T[i]) btemp[i]=1;
+        else btemp[i]=0;
 	}
 
 /*	
@@ -51,18 +50,17 @@ static float calc_B(float t,float *T,int n)
 		for (i=0; i<n-1-j; i++) {
 			float c=0;
 			if (T[i+j]!=T[i]) {
-				c=b[i]*(t-T[i])/(T[i+j]-T[i]);
+                c=btemp[i]*(t-T[i])/(T[i+j]-T[i]);
 			}
 			if (T[i+j+1]!=T[i+1]) {
-				c+= b[i+1]*(T[i+j+1]-t)/(T[i+j+1]-T[i+1]);
+                c+= btemp[i+1]*(T[i+j+1]-t)/(T[i+j+1]-T[i+1]);
 			}
-			b[i]=c;
+            btemp[i]=c;
 		}
 	}
 
-	float ret=b[0];
-	delete []b;
-	
+    float ret=btemp[0];
+
 	return ret;
 	
 }
@@ -110,10 +108,14 @@ int BSpline::getParamPoint(float t,float outp[3]) const
 		if (T1[i]>1) T1[i]=1;
 	}
 
+    float *btemp;
+    btemp=new float[M+1];
 	for (i=0; i<=K; i++) {
-		b[i]=calc_B(t,T+i,M+2);
+        b[i]=calc_B(t,T+i,M+2,btemp);
 		sbi+=b[i];
 	}
+    delete []btemp;
+
 	free(T1);
 
 	float denom=0;

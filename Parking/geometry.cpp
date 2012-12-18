@@ -1146,7 +1146,7 @@ void Geometry::drawBSplines()
 	glColor4fv(lineStripColor);
 	int i,j;
 	float t;
-	float dt=0.01;
+    float dt=0.02;
 	float X[3];
 	for (i=0; i<bsplines.length(); i++) {
 		const BSpline & BS=bsplines.at(i);
