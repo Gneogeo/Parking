@@ -248,6 +248,7 @@ void readIGES(Geometry *geom,const char *name)
 	QMap<int,int> depcrdMap;
 	QMap<int,int> arcCoordMap;
 	QMap<int,int> gridCoordMap;
+	QMap<int,int> bsplineCoordMap;
 
 
 	while (ok) {
@@ -644,7 +645,7 @@ void readIGES(Geometry *geom,const char *name)
 		c2_id=it.value();
 
 
-		Grid *G=&geom->grids.at( it.key() );
+		Grid *G=&geom->grids.at( c1_id );
 
 		if (crdMap.find(c2_id)!=crdMap.end()) {
 			CoordinateSystem<float> c=crdMap.find(c2_id).value();
@@ -653,6 +654,26 @@ void readIGES(Geometry *geom,const char *name)
 			c.fromLocalToGlobal(tmp,G->coords);
 			vec_copy(G->coords,tmp);
 		}
+	}
+
+	for (it=bsplineCoordMap.begin(); it!=bsplineCoordMap.end(); ++it) {
+		int c1_id,c2_id;
+		c1_id=it.key();
+		c2_id=it.value();
+
+		BSpline *BS=&geom->bsplines.at( c1_id );
+
+		if (crdMap.find(c2_id)!=crdMap.end()) {
+			CoordinateSystem<float> c=crdMap.find(c2_id).value();
+
+			int j;
+			float tmp[3];
+			for (j=0; j<=BS->K; j++) {
+				c.fromLocalToGlobal(tmp,BS->P[j]);
+				vec_copy(BS->P[j],tmp);
+			}
+		}
+
 	}
 	
 
