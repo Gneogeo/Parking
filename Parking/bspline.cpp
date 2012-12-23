@@ -4,6 +4,18 @@
 #include <stdlib.h>
 #include <cstring>
 
+BSpline::BSpline()
+{
+	K=0;
+	M=0;
+	T=0;
+	W=0;
+	P=0;
+	memset(V,0,sizeof(V));
+	total_coords=0;
+	coords=0;
+}
+
 BSpline & BSpline::operator = (const BSpline &r)
 {
 	K=r.K;
@@ -17,7 +29,8 @@ BSpline & BSpline::operator = (const BSpline &r)
 	memcpy(P,r.P,(K+1)*sizeof(float[3]));
 	memcpy(V,r.V,sizeof(r.V));
 
-
+	total_coords=0;
+	coords=0;
 
 	return *this;
 
@@ -28,6 +41,7 @@ BSpline::~BSpline()
 	free(T);
 	free(W);
 	free(P);
+	free(coords);
 }
 
 int BSpline::getParamPoint(float t,float outp[3]) const
@@ -84,4 +98,33 @@ int BSpline::getParamPoint(float t,float outp[3]) const
 	delete []b;
 
 	return 1;
+}
+
+#include "myvector.h"
+#include "vector3d.h"
+
+void BSpline::recalcCoords(float dt)
+{
+	int j;
+	float t;
+	vector3d<float> X;
+
+	myVector< vector3d<float> > F;
+
+	for (t=V[0]; t<V[1]; t+=dt) {
+		if (getParamPoint(t,X.data)) {
+			F.append(X);
+		}
+	}
+	t=V[1];
+	if (getParamPoint(t,X.data)) {
+		F.append(X);
+	}
+	free(coords);
+	coords=(float(*)[3])calloc(F.length(),sizeof(float[3]));
+	total_coords=F.length();
+	for (j=0; j<total_coords; j++) {
+		memcpy(coords[j],F.at(j).data,sizeof(float[3]));
+	}
+
 }

@@ -1146,22 +1146,134 @@ void Geometry::drawBSplines()
 	glColor4fv(lineStripColor);
 	int i,j;
 	float t;
-    float dt=0.02;
+	float dt=0.05;
 	float X[3];
 	for (i=0; i<bsplines.length(); i++) {
 		const BSpline & BS=bsplines.at(i);
-		glBegin(GL_LINE_STRIP);
-		for (t=BS.V[0]; t<BS.V[1]; t+=dt) {
-			if (BS.getParamPoint(t,X)) {
-				glVertex3fv(X);
-			}
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glVertexPointer(3,GL_FLOAT,0,BS.coords);
+
+		int *ar=(int*)malloc(BS.total_coords*sizeof(int));
+		for (j=0; j<BS.total_coords; j++) {
+			ar[j]=j;
 		}
-		t=BS.V[1];
-		if (BS.getParamPoint(t,X)) {
-			glVertex3fv(X);
-		}
-		glEnd();
+		glDrawElements(GL_LINE_STRIP,BS.total_coords,GL_UNSIGNED_INT,ar);
+		free(ar);
+
+
+		glDisableClientState(GL_VERTEX_ARRAY);
+
+		/*
+
+		   glBegin(GL_LINE_STRIP);
+		   for (j=0; j<BS.total_coords; j++) {
+		   glVertex3fv(BS.coords[j]);
+		   }
+		   glEnd();
+		 */
 	}
 }
 
+
+void Geometry::drawRevolveLines(float pmat02,float pmat12,float pmat22)
+{
+   glShadeModel(GL_SMOOTH);
+	int i;
+	for (i=0; i<revolvelines.length(); i++) {
+		const RevolveLine &RL=revolvelines.at(i);
+		const Line &axisL=lines.at(RL.line_axis_pos);
+		const Line &genL=lines.at(RL.line_gen_pos);
+
+		float axis[2][3],Z[3];
+		float gen[2][3];
+		vec_copy(axis[0],grids.at( axisL.node[0] ).coords);
+		vec_copy(axis[1],grids.at( axisL.node[1] ).coords);
+		vec_diff(Z,axis[1],axis[0]);
+
+		vec_copy(gen[0],grids.at( genL.node[0] ).coords);
+		vec_copy(gen[1],grids.at( genL.node[1] ).coords);
+
+		float X[2][3],Y[2][3],O[2][3];
+		float r[2];
+
+		project_on_line(O[0],gen[0],axis[0],axis[1]);
+		project_on_line(O[1],gen[1],axis[0],axis[1]);
+
+		vec_diff(X[0],gen[0],O[0]);
+		vec_length(&r[0],X[0]);
+		vec_cross_product(Y[0],Z,X[0]);
+		vec_normalize(X[0]);
+		vec_normalize(Y[0]);
+
+		vec_diff(X[1],gen[1],O[1]); 
+		vec_length(&r[1],X[1]);
+		vec_cross_product(Y[1],Z,X[1]);
+		vec_normalize(X[1]);
+		vec_normalize(Y[1]);
+
+		float f,df;
+		df=(RL.fmax-RL.fmin)/50.;
+
+		glBegin(GL_QUAD_STRIP);
+		f=RL.fmin;
+		for (;;) {
+			float cosf,sinf;
+			float n[2][3];
+			float s[2][3];
+			float tmp[3],tmp1[3],tmp2[3];
+
+			cosf=cos(f); sinf=sin(f);
+
+			vec_scale(tmp,cosf,X[0]);
+			vec_copy(n[0],tmp);
+			vec_scale(tmp,sinf,Y[0]);
+			vec_sum(n[0],n[0],tmp);
+
+			vec_scale(tmp,cosf,X[1]);
+			vec_copy(n[1],tmp);
+			vec_scale(tmp,sinf,Y[1]);
+			vec_sum(n[1],n[1],tmp);
+
+			glNormal3fv(n[1]);
+
+			vec_scale(s[0],r[0],n[0]);
+			vec_scale(s[1],r[1],n[1]);
+
+
+			vec_sum(s[0],s[0],O[0]);
+			vec_sum(s[1],s[1],O[1]);
+
+
+			vec_diff(tmp,s[0],s[1]);
+
+			vec_cross_product(tmp1,n[0],Z);
+			vec_cross_product(tmp2,tmp,tmp1);
+			vec_normalize(tmp2);
+			if (tmp2[0]*pmat02+tmp2[1]*pmat12+tmp2[2]*pmat22<0) {
+				vec_flip(tmp2,tmp2);
+			}
+			glNormal3fv(tmp2);
+			glVertex3fv(s[0]);
+			
+			vec_cross_product(tmp1,n[1],Z);
+			vec_cross_product(tmp2,tmp,tmp1);
+			vec_normalize(tmp2);
+			if (tmp2[0]*pmat02+tmp2[1]*pmat12+tmp2[2]*pmat22<0) {
+				vec_flip(tmp2,tmp2);
+			}
+			glNormal3fv(tmp2);
+			glVertex3fv(s[1]);
+
+			if (f==RL.fmax) break;
+
+			f+=df;
+			if (f>RL.fmax) {
+				f=RL.fmax;
+			}
+		}
+
+		glEnd();
+
+	}
+}
 

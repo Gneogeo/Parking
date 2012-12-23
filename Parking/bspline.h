@@ -2,7 +2,8 @@
 #define BSPLINE_H
 
 class BSpline {
-public:	
+public:
+	BSpline();
 	BSpline & operator = (const BSpline &r);
 	~BSpline();
 
@@ -12,8 +13,13 @@ public:
 	float *W; /* 0:K */
 	float (*P)[3]; /* 0:K */
 	float V[2];
+
+	int total_coords;
+	float (*coords)[3];
 	
 	int getParamPoint(float t,float outp[3]) const;
+
+	void recalcCoords(float dt);
 };
 
 

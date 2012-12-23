@@ -54,6 +54,14 @@ public:
 };
 
 
+class RevolveLine {
+public:	
+	int line_axis_pos;
+	int line_gen_pos;
+	float fmin;
+	float fmax;
+};
+
 
 class Geometry 
 {
@@ -68,6 +76,8 @@ public:
 	myVector<ArcCircle> arcs;
 	myVector<Spline> splines;
 	myVector<BSpline> bsplines;
+
+	myVector<RevolveLine> revolvelines;
 
 	int pickedGrid;
 
@@ -122,6 +132,8 @@ public:
 	void drawArcs();
 	void drawSplines();
 	void drawBSplines();
+
+	void drawRevolveLines(float pmat02,float pmat12,float pmat22);
 };
 
 

@@ -142,8 +142,6 @@ void readIGES(Geometry *geom,const char *name)
 	}
 
 	int globalParamCount=0;
-	char ParameterDelimiterChar=',';
-	char RecordDelimiterChar=';';
 	char GlobalParam[26][100];
 
 
@@ -163,16 +161,16 @@ void readIGES(Geometry *geom,const char *name)
 				globalParamCount+=2;
 				pnt+=2;
 			} else if (pnt[0]=='1' && pnt[1]=='H' && pnt[2]==pnt[3] && pnt[3] !=pnt[4] && pnt[4]=='1' && pnt[5]=='H') {
-				ParameterDelimiterChar=pnt[2];
-				RecordDelimiterChar=pnt[6];
+				igs.ParameterDelimiterChar=pnt[2];
+				igs.RecordDelimiterChar=pnt[6];
 				pnt=&pnt[8];
 				globalParamCount+=2;
 			} else if (pnt[0]=='1' && pnt[1]=='H' && pnt[2]==pnt[3] && pnt[3]==pnt[4]) {
-				ParameterDelimiterChar=pnt[2];
+				igs.ParameterDelimiterChar=pnt[2];
 				pnt=&pnt[5];
 				globalParamCount+=2;
 			} else if (pnt[0]==',' && pnt[1]=='1' && pnt[2]=='H' && pnt[4]==',') {
-				RecordDelimiterChar=pnt[3];
+				igs.RecordDelimiterChar=pnt[3];
 				pnt=&pnt[5];
 				globalParamCount+=2;
 			}
@@ -244,16 +242,25 @@ void readIGES(Geometry *geom,const char *name)
 
 	nextParameterLine=QString::fromLocal8Bit("");
 
+	QSet<int> usedParamSet;
+
 	QMap<int,CoordinateSystem<float> > crdMap;
 	QMap<int,int> depcrdMap;
 	QMap<int,int> arcCoordMap;
 	QMap<int,int> gridCoordMap;
 	QMap<int,int> bsplineCoordMap;
 
+	QMap<int,int> lineMap;
+
+
+	
+	
+
 
 	while (ok) {
 		if (igs.letterCode!='P') break;
 
+		int DE=2*igesCount+1;
 		int paramId;
 		ParameterLine=nextParameterLine;
 		nextParameterLine=QString::fromLocal8Bit("");
@@ -268,7 +275,7 @@ void readIGES(Geometry *geom,const char *name)
 			igs.data[64]=0;
 			stripTrailingSpaces(igs.data);
 
-			if (paramId>2*igesCount+1) {
+			if (paramId>DE) {
 				nextParameterLine.append(QString::fromLocal8Bit(igs.data));
 				break;
 			}
@@ -288,6 +295,9 @@ void readIGES(Geometry *geom,const char *name)
 
 		pnt+=igs.readDelimString(pnt,param);
 
+		if (!usedParamSet.contains(igesd->entityType)) {
+			qDebug("Entity: %d",igesd->entityType);
+		}
 		switch (igesd->entityType) {
 			case 0: /*Null*/
 				break;
@@ -375,13 +385,29 @@ void readIGES(Geometry *geom,const char *name)
 						A(y/a-b/a)^2+B(y/a-b/a)(ax+b)+C(ax+b)^2+D(y/a-b/a)+E(ax+b)+F= Ax^2+Bxy+Cy^2+Dx+Ey+F
 						A(y^2/a^2+b^2/a^2-2yb/a^2)+B(xy+by/a-bx-b^2/a)+C(a^2x^2+b^2+2abx)+D(y/a-b/a)+E(ax+b)+F
 
-						A(b^2/a^2)+B(-b^2/a)+C(b^2)-Db/a+Eb+F
-
-						(Ca^2)x^2+(B)xy+(A/a^2)y^2+(-Bb+2Cab+Ea)x+(Bb/a-2Ab/a^2+D/a)y
-
+						(Ca^2)x^2+(B)xy+(A/a^2)y^2+(-Bb+2Cab+Ea)x+(Bb/a-2Ab/a^2+D/a)y+Ab^2/a^2-Bb^2/a+Cb^2-Db/a+Eb+F
 
 						a^2=A/C
 						2Ab+EA/C=Da+Bab
+
+						-Bb+2Cab+Ea=D 
+						Bb/a-2Ab/a^2+D/a=E
+						Ab^2/a^2-Bb^2/a+Cb^2-Db/a+Eb+F=F
+						A(-b/a)^2+B(-b/a)b+Cb^2+D(-b/a)+Eb+F=F
+
+						Ca^2=A -> a^2=A/C
+						A/a^2=C -> Ca^2=A
+						-Bb+2Cab+Ea=D -> b=(D-Ea)/(2Ca-B)
+						Bb/a-2Ab/a^2+D/a=E -> b=(D-Ea)/(2A/a-B)
+						A(-b/a)^2+B(-b/a)b+Cb^2+D(-b/a)+Eb=0 -> (-b^2)C+B(-b/a)b+Cb^2+D(-b/a)+Eb=0
+						1: a=sqrt(A/C)
+						
+
+						
+
+						1: a=sqrt(A/C)
+
+						
 
 
 
@@ -465,7 +491,8 @@ void readIGES(Geometry *geom,const char *name)
 					if (igesd->transMatrix!=0) {
 						gridCoordMap.insert(g2,igesd->transMatrix);
 					}
-					geom->addLine(g1,g2);
+					int lid=geom->addLine(g1,g2);
+					lineMap.insert(DE,lid);
 				}
 				break;
 			case 112: /*Spline*/
@@ -514,6 +541,38 @@ void readIGES(Geometry *geom,const char *name)
 
 				}
 				break;
+			case 120:
+				/*Surface of Revolution*/
+				{
+					int axis_id;
+					int gen_id;
+					float f1;
+					float f2;
+
+					pnt+=igs.readDelimString(pnt,param); axis_id=atoi(param);
+					pnt+=igs.readDelimString(pnt,param); gen_id=atoi(param);
+					pnt+=igs.readDelimString(pnt,param); f1=atof(param);
+                                        pnt+=igs.readDelimString(pnt,param); f2=atof(param);
+
+
+
+					IGES_directory *gend;
+                                        gend=&dirlist.at((gen_id-1)/2);
+					if (gend->entityType==110) {
+						RevolveLine RL;
+						RL.line_axis_pos=axis_id;
+						RL.line_gen_pos=gen_id;
+						RL.fmin=f1;
+						RL.fmax=f2;
+
+						geom->revolvelines.append(RL);
+					} else {
+						qDebug("Revolving of %d not supported yet",gend->entityType);
+					}
+					
+
+				}
+				break;
 			case 124:
 				/*Coordinate system*/
 				{
@@ -533,9 +592,9 @@ void readIGES(Geometry *geom,const char *name)
 					pnt+=igs.readDelimString(pnt,param); c[2]=atof(param);
 					Crd.setAxis(x,y,z);
 					Crd.setCenter(c);
-					crdMap.insert(2*igesCount+1,Crd);
+					crdMap.insert(DE,Crd);
 					if (igesd->transMatrix!=0) {
-						depcrdMap.insert(2*igesCount+1,igesd->transMatrix);
+						depcrdMap.insert(DE,igesd->transMatrix);
 					}
 
 				}
@@ -543,7 +602,7 @@ void readIGES(Geometry *geom,const char *name)
 			case 126:
 				{ 
 					/*B-Spline curves*/
-					BSpline BS={0};
+					BSpline BS;
 
 					pnt+=igs.readDelimString(pnt,param);
 					BS.K=atoi(param);
@@ -579,13 +638,21 @@ void readIGES(Geometry *geom,const char *name)
 					pnt+=igs.readDelimString(pnt,param);
 					BS.V[1]=atof(param);
 
-					geom->addBSpline(BS);
+					int bsid=geom->addBSpline(BS);
+					if (igesd->transMatrix!=0) {
+						bsplineCoordMap.insert(bsid,igesd->transMatrix);
+					}
 
 				}
 				break;
 			default:
-				qDebug("Parameter %d not implemented yet",igesd->entityType);
+				if (!usedParamSet.contains(igesd->entityType)) {
+					qDebug("Parameter %d not implemented yet",igesd->entityType);
+				}
+				break;
 		}
+
+		usedParamSet.insert(igesd->entityType);
 
 		igesCount++;
 
@@ -675,7 +742,18 @@ void readIGES(Geometry *geom,const char *name)
 		}
 
 	}
-	
+
+	for (int i=0; i<geom->bsplines.length(); i++) {
+		BSpline & BS=geom->bsplines.at(i);
+		BS.recalcCoords(0.05);
+	}
+
+	for (int i=0; i<geom->revolvelines.length(); i++) {
+		RevolveLine &RL=geom->revolvelines.at(i);
+		RL.line_axis_pos=lineMap.find(RL.line_axis_pos).value();
+		RL.line_gen_pos=lineMap.find(RL.line_gen_pos).value();
+
+	}
 
 	fclose(fp);
 }

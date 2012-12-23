@@ -1,6 +1,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <QtGui>
 #include <QtOpenGL>
+#include <cfloat>
 
 
 #include <GL/glu.h>
@@ -223,28 +224,47 @@ void GLWidget::fixView()
 	glGetFloatv(GL_MODELVIEW_MATRIX,pmat);
 
 	if (geom->grids.length()) {
-                unsigned int i;
+                unsigned int i,j;
 		float xmin,xmax,ymin,ymax;
+		xmin=FLT_MAX;
+		xmax=-FLT_MAX;
+		ymin=FLT_MAX;
+		ymax=-FLT_MAX;
+
+		int first=1;
 		
 		for (i=0; i<geom->grids.length(); i++) {
 			float *pvec,vec[3];
-                        pvec=geom->grids.at(i).coords;
+			pvec=geom->grids.at(i).coords;
 
 			vec[0]=pvec[0]*pmat[0]+pvec[1]*pmat[4]+pvec[2]*pmat[8]+pmat[12];
 			vec[1]=pvec[0]*pmat[1]+pvec[1]*pmat[5]+pvec[2]*pmat[9]+pmat[13];
 			vec[2]=pvec[0]*pmat[2]+pvec[1]*pmat[6]+pvec[2]*pmat[10]+pmat[14];
 
-			if (i==0) {
-				xmin=xmax=vec[0];
-				ymin=ymax=vec[1];
-			} else {
+			xmin = vec[0]<xmin ? vec[0] : xmin;
+			xmax = vec[0]>xmax ? vec[0] : xmax;
+			ymin = vec[1]<ymin ? vec[1] : ymin;
+			ymax = vec[1]>ymax ? vec[1] : ymax;
+
+		}
+
+		for (i=0; i<geom->bsplines.length(); i++) {
+			float *pvec,vec[3];
+			const BSpline &BS=geom->bsplines.at(i);
+			for (j=0; j<BS.total_coords; j++) {
+				pvec=BS.coords[j];
+				vec[0]=pvec[0]*pmat[0]+pvec[1]*pmat[4]+pvec[2]*pmat[8]+pmat[12];
+				vec[1]=pvec[0]*pmat[1]+pvec[1]*pmat[5]+pvec[2]*pmat[9]+pmat[13];
+				vec[2]=pvec[0]*pmat[2]+pvec[1]*pmat[6]+pvec[2]*pmat[10]+pmat[14];
+
 				xmin = vec[0]<xmin ? vec[0] : xmin;
 				xmax = vec[0]>xmax ? vec[0] : xmax;
 				ymin = vec[1]<ymin ? vec[1] : ymin;
 				ymax = vec[1]>ymax ? vec[1] : ymax;
 			}
-
 		}
+		if (xmin>xmax) xmin=xmax=0;
+		if (ymin>ymax) ymin=ymax=0;
 
 		float cx=(xmin+xmax)*0.5;
 		float cy=(ymin+ymax)*0.5;
@@ -606,6 +626,10 @@ void GLWidget::paintGL()
 		}
 		
 		glEnd();
+
+		glShadeModel(GL_FLAT);
+
+		geom->drawRevolveLines(pmat02,pmat12,pmat22);
 
 		glDisable(GL_LIGHTING);
 
