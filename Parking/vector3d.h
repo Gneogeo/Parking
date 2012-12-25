@@ -3,8 +3,18 @@
 
 template <typename T> 
 class vector3d {
+	vector3d(const vector3d &r);
 public:
 	T data[3];
+
+	vector3d() {};
+
+	vector3d & operator = (const vector3d &r) {
+		data[0]=r.data[0];
+		data[1]=r.data[1];
+		data[2]=r.data[2];
+		return *this;
+	}
 
 	void diff(const T start[3],const T stop[3]) {data[0]=stop[0]-start[0]; data[1]=stop[1]-start[1]; data[2]=stop[2]-start[2];}
 

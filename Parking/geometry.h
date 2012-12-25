@@ -76,6 +76,7 @@ public:
 	myVector<ArcCircle> arcs;
 	myVector<Spline> splines;
 	myVector<BSpline> bsplines;
+	myVector<BSplineSurf> bsplinesurfs;
 
 	myVector<RevolveLine> revolvelines;
 
@@ -96,7 +97,8 @@ public:
 	int addCircle(const CoordinateSystem<float> XYZ,float radius);
 	int addArc(const CoordinateSystem<float> XYZ,float radius,float fmin,float fmax);
 	int addSpline(float Px[4],float Py[4],float Pz[4]);
-	int addBSpline(const BSpline &bsplines);
+	int addBSpline(const BSpline &BS);
+	int addBSplineSurf(const BSplineSurf &BSS);
 	
 	void shrinkGeometry();
 	void compressGrids();
@@ -132,6 +134,8 @@ public:
 	void drawArcs();
 	void drawSplines();
 	void drawBSplines();
+
+	void drawBSplineSurfs(float pmat02,float pmat12,float pmat22);
 
 	void drawRevolveLines(float pmat02,float pmat12,float pmat22);
 };

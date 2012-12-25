@@ -159,6 +159,12 @@ int Geometry::addBSpline(const BSpline &BS)
 	return bsplines.length()-1;
 }
 
+int Geometry::addBSplineSurf(const BSplineSurf &BSS)
+{
+	bsplinesurfs.append(BSS);
+	return bsplinesurfs.length()-1;
+}
+
 void Geometry::calcTrianglesNormals()
 {
         unsigned int k;
@@ -1174,10 +1180,66 @@ void Geometry::drawBSplines()
 	}
 }
 
+void Geometry::drawBSplineSurfs(float pmat02,float pmat12,float pmat22)
+{
+	float ds=0.25,dt=0.25;
+	float s,t;
+	int i;
+	for (i=0; i<bsplinesurfs.length(); i++) {
+		const BSplineSurf &BSS=bsplinesurfs.at(i);
+		for (s=BSS.U[0]; s<BSS.U[1]; s+=ds) {
+			float s1=s+ds;
+			if (s1>BSS.U[1]) s1=BSS.U[1];
+
+			int first=1;
+			float c[4][3];
+			float g1[3],g2[3],g3[3];
+			glBegin(GL_QUAD_STRIP);
+			t=BSS.V[0];
+			
+			int last=0;
+			for (;;) {
+
+				if (first==1) {
+					BSS.getParamPoint(s,t,c[2]);
+					BSS.getParamPoint(s1,t,c[3]);
+					glVertex3fv(c[2]);
+					glVertex3fv(c[3]);
+					first=0;
+				} else {
+					vec_copy(c[0],c[2]);
+					vec_copy(c[1],c[3]);
+					BSS.getParamPoint(s,t,c[2]);
+					BSS.getParamPoint(s1,t,c[3]);
+					vec_diff(g1,c[0],c[3]);
+					vec_diff(g2,c[1],c[2]);
+					vec_cross_product(g3,g1,g2);
+					vec_normalize(g3);
+					if (g3[0]*pmat02+g3[1]*pmat12+g3[2]*pmat22<0) {
+						vec_flip(g3,g3);
+					}
+					glNormal3fv(g3);
+					glVertex3fv(c[2]);
+					glVertex3fv(c[3]);
+				}
+				t+=dt;
+				if (last==1) break;
+				if (t>=BSS.V[1]) {
+					t=BSS.V[1];
+					last=1;
+				}
+			}
+			glEnd();
+		}
+
+	}
+	
+}
+
 
 void Geometry::drawRevolveLines(float pmat02,float pmat12,float pmat22)
 {
-   glShadeModel(GL_SMOOTH);
+	glShadeModel(GL_SMOOTH);
 	int i;
 	for (i=0; i<revolvelines.length(); i++) {
 		const RevolveLine &RL=revolvelines.at(i);
@@ -1254,7 +1316,7 @@ void Geometry::drawRevolveLines(float pmat02,float pmat12,float pmat22)
 			}
 			glNormal3fv(tmp2);
 			glVertex3fv(s[0]);
-			
+
 			vec_cross_product(tmp1,n[1],Z);
 			vec_cross_product(tmp2,tmp,tmp1);
 			vec_normalize(tmp2);
@@ -1275,5 +1337,6 @@ void Geometry::drawRevolveLines(float pmat02,float pmat12,float pmat22)
 		glEnd();
 
 	}
+	glShadeModel(GL_FLAT);
 }
 

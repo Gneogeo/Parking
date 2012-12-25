@@ -249,6 +249,7 @@ void readIGES(Geometry *geom,const char *name)
 	QMap<int,int> arcCoordMap;
 	QMap<int,int> gridCoordMap;
 	QMap<int,int> bsplineCoordMap;
+	QMap<int,int> bsplineSurfCoordMap;
 
 	QMap<int,int> lineMap;
 
@@ -645,6 +646,72 @@ void readIGES(Geometry *geom,const char *name)
 
 				}
 				break;
+
+			case 128:
+				{
+					/*B-Spline surfaces*/
+					BSplineSurf BSS;
+
+					pnt+=igs.readDelimString(pnt,param);
+					BSS.K1=atoi(param);
+					pnt+=igs.readDelimString(pnt,param);
+					BSS.K2=atoi(param);
+					pnt+=igs.readDelimString(pnt,param);
+					BSS.M1=atoi(param);
+					pnt+=igs.readDelimString(pnt,param);
+					BSS.M2=atoi(param);
+
+					pnt+=igs.readDelimString(pnt,param);
+					pnt+=igs.readDelimString(pnt,param);
+					pnt+=igs.readDelimString(pnt,param);
+					pnt+=igs.readDelimString(pnt,param);
+					pnt+=igs.readDelimString(pnt,param);
+
+					BSS.S=(float*)calloc(BSS.K1+BSS.M1+2,sizeof(float));
+					BSS.T=(float*)calloc(BSS.K2+BSS.M2+2,sizeof(float));
+					BSS.W=(float*)calloc((BSS.K1+1)*(BSS.K2+1),sizeof(float));
+					BSS.P=(float(*)[3])calloc((BSS.K1+1)*(BSS.K2+1),sizeof(float[3]));
+
+					int i,j,ij;
+					for (j=0; j<BSS.K1+BSS.M1+2; j++) {
+						pnt+=igs.readDelimString(pnt,param); BSS.S[j]=atof(param);
+					}
+					for (j=0; j<BSS.K2+BSS.M2+2; j++) {
+						pnt+=igs.readDelimString(pnt,param); BSS.T[j]=atof(param);
+					}
+					for (j=0; j<BSS.K2+1; j++) {
+						for (i=0; i<BSS.K1+1; i++) {
+							ij=i+j*(BSS.K1+1);
+							pnt+=igs.readDelimString(pnt,param); BSS.W[ij]=atof(param);
+						}
+					}
+					for (j=0; j<BSS.K2+1; j++) {
+						for (i=0; i<BSS.K1+1; i++) {
+							ij=i+j*(BSS.K1+1);
+							pnt+=igs.readDelimString(pnt,param); 
+							BSS.P[ij][0]=atof(param);
+							pnt+=igs.readDelimString(pnt,param);
+							BSS.P[ij][1]=atof(param);
+							pnt+=igs.readDelimString(pnt,param);
+							BSS.P[ij][2]=atof(param);
+						}
+					}
+					pnt+=igs.readDelimString(pnt,param);
+					BSS.U[0]=atof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					BSS.U[1]=atof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					BSS.V[0]=atof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					BSS.V[1]=atof(param);
+
+					int bssid=geom->addBSplineSurf(BSS);
+					if (igesd->transMatrix!=0) {
+						bsplineSurfCoordMap.insert(bssid,igesd->transMatrix);
+					}
+				}
+				break;
+
 			default:
 				if (!usedParamSet.contains(igesd->entityType)) {
 					qDebug("Parameter %d not implemented yet",igesd->entityType);
@@ -740,7 +807,28 @@ void readIGES(Geometry *geom,const char *name)
 				vec_copy(BS->P[j],tmp);
 			}
 		}
+	}
 
+	for (it=bsplineSurfCoordMap.begin(); it!=bsplineSurfCoordMap.end(); ++it) {
+		int c1_id,c2_id;
+		c1_id=it.key();
+		c2_id=it.value();
+
+		BSplineSurf *BSS=&geom->bsplinesurfs.at( c1_id );
+
+		if (crdMap.find(c2_id)!=crdMap.end()) {
+			CoordinateSystem<float> c=crdMap.find(c2_id).value();
+
+			int i,j,ij;
+			float tmp[3];
+			for (j=0; j<=BSS->K2; j++) {
+				for (i=0; i<=BSS->K1; i++) {
+					ij=i+j*(BSS->K1+1);
+					c.fromLocalToGlobal(tmp,BSS->P[j]);
+					vec_copy(BSS->P[j],tmp);
+				}
+			}
+		}
 	}
 
 	for (int i=0; i<geom->bsplines.length(); i++) {

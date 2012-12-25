@@ -2,6 +2,7 @@
 #define MYVECTOR_H
 
 #include <cstring>
+#include <cstdlib>
 
 template <typename T> class myVector {
         myVector(myVector &x); //deactivated copy-constructor

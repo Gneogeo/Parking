@@ -630,6 +630,7 @@ void GLWidget::paintGL()
 		glShadeModel(GL_FLAT);
 
 		geom->drawRevolveLines(pmat02,pmat12,pmat22);
+		geom->drawBSplineSurfs(pmat02,pmat12,pmat22);
 
 		glDisable(GL_LIGHTING);
 
