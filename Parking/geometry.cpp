@@ -1178,11 +1178,11 @@ void Geometry::drawBSplineSurfs()
 {
 	glShadeModel(GL_SMOOTH);
 	int i;
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
 	for (i=0; i<bsplinesurfs.length(); i++) {
 		const BSplineSurf &BSS=bsplinesurfs.at(i);
-		glEnableClientState(GL_VERTEX_ARRAY);
 		glVertexPointer(3,GL_FLOAT,0,BSS.coords);
-		glEnableClientState(GL_NORMAL_ARRAY);
 		glNormalPointer(GL_FLOAT,0,BSS.normals);
 
 		int *ar,totta;
@@ -1195,10 +1195,9 @@ void Geometry::drawBSplineSurfs()
 			ar+=totta;
 		}
 
-		glDisableClientState(GL_VERTEX_ARRAY);
-		glDisableClientState(GL_NORMAL_ARRAY);
-
 	}
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
 	glShadeModel(GL_FLAT);
 }
 

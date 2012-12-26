@@ -266,6 +266,22 @@ void GLWidget::fixView()
 				ymax = vec[1]>ymax ? vec[1] : ymax;
 			}
 		}
+
+		for (i=0; i<geom->bsplinesurfs.length(); i++) {
+			float *pvec,vec[3];
+			const BSplineSurf &BSS=geom->bsplinesurfs.at(i);
+			for (j=0; j<BSS.total_coords; j++) {
+				pvec=BSS.coords[j];
+				vec[0]=pvec[0]*pmat[0]+pvec[1]*pmat[4]+pvec[2]*pmat[8]+pmat[12];
+				vec[1]=pvec[0]*pmat[1]+pvec[1]*pmat[5]+pvec[2]*pmat[9]+pmat[13];
+				vec[2]=pvec[0]*pmat[2]+pvec[1]*pmat[6]+pvec[2]*pmat[10]+pmat[14];
+
+				xmin = vec[0]<xmin ? vec[0] : xmin;
+				xmax = vec[0]>xmax ? vec[0] : xmax;
+				ymin = vec[1]<ymin ? vec[1] : ymin;
+				ymax = vec[1]>ymax ? vec[1] : ymax;
+			}
+		}
 		if (xmin>xmax) xmin=xmax=0;
 		if (ymin>ymax) ymin=ymax=0;
 
