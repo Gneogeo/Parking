@@ -1174,7 +1174,7 @@ void Geometry::drawBSplines()
 	}
 }
 
-void Geometry::drawBSplineSurfs(float pmat02,float pmat12,float pmat22)
+void Geometry::drawBSplineSurfs()
 {
 	glShadeModel(GL_SMOOTH);
 	int i;
@@ -1203,7 +1203,7 @@ void Geometry::drawBSplineSurfs(float pmat02,float pmat12,float pmat22)
 }
 
 
-void Geometry::drawRevolveLines(float pmat02,float pmat12,float pmat22)
+void Geometry::drawRevolveLines()
 {
 	glShadeModel(GL_SMOOTH);
 	int i;
@@ -1277,18 +1277,12 @@ void Geometry::drawRevolveLines(float pmat02,float pmat12,float pmat22)
 			vec_cross_product(tmp1,n[0],Z);
 			vec_cross_product(tmp2,tmp,tmp1);
 			vec_normalize(tmp2);
-			if (tmp2[0]*pmat02+tmp2[1]*pmat12+tmp2[2]*pmat22<0) {
-				vec_flip(tmp2,tmp2);
-			}
 			glNormal3fv(tmp2);
 			glVertex3fv(s[0]);
 
 			vec_cross_product(tmp1,n[1],Z);
 			vec_cross_product(tmp2,tmp,tmp1);
 			vec_normalize(tmp2);
-			if (tmp2[0]*pmat02+tmp2[1]*pmat12+tmp2[2]*pmat22<0) {
-				vec_flip(tmp2,tmp2);
-			}
 			glNormal3fv(tmp2);
 			glVertex3fv(s[1]);
 

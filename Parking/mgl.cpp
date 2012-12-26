@@ -58,17 +58,20 @@ void GLWidget::initializeGL()
 	glClearColor(1,1,1,1);
 	glShadeModel(GL_FLAT);
 	glEnable(GL_DEPTH_TEST);
-	glMaterialfv(GL_FRONT, GL_AMBIENT, no_mat);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, no_mat);
-	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
-	glMaterialfv(GL_FRONT, GL_EMISSION, no_mat);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, no_mat);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_diffuse);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, no_mat);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, no_mat);
 
-	glColorMaterial(GL_FRONT, GL_DIFFUSE);
+	glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
+
+
 	glEnable(GL_COLOR_MATERIAL);
 	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,1);
 
 	
 
@@ -359,11 +362,6 @@ void drawRectangle(float x1,float y1,float z1,float x2,float y2,float z2,float x
 	norm[0]=(y1-y3)*(z2-z4)-(z1-z3)*(y2-y4);
 	norm[1]=(z1-z3)*(x2-x4)-(x1-x3)*(z2-z4);
 	norm[2]=(x1-x3)*(y2-y4)-(y1-y3)*(x2-x4);
-	if (norm[0]*pmat02+norm[1]*pmat12+norm[2]*pmat22<0) {
-		norm[0]=-norm[0];
-		norm[1]=-norm[1];
-		norm[2]=-norm[2];
-	}
 	vec_normalize(norm);
 	float vert[3];
 
@@ -595,11 +593,7 @@ void GLWidget::paintGL()
 		for (k=0; k<geom->triangles.length(); k++) {
 			norm1=geom->triangles.at(k).normal.data;
 			if (!geom->hasSmoothNormals) {
-				if (norm1[0]*pmat02+norm1[1]*pmat12+norm1[2]*pmat22<0) {
-					glNormal3f(-norm1[0],-norm1[1],-norm1[2]);
-				} else {
-					glNormal3fv(norm1);
-				}
+				glNormal3fv(norm1);
 				for (k1=0; k1<3; k1++) {
 					glVertex3fv(geom->grids.at(geom->triangles.at(k).node[k1]).coords);
 				}
@@ -608,17 +602,9 @@ void GLWidget::paintGL()
 					norm=geom->triangles.at(k).cnormal[k1].data;
 					cosf=norm[0]*norm1[0]+norm[1]*norm1[1]+norm[2]*norm1[2];
 					if (1 || (cosf>-.94 && cosf<.94)) {
-						if (norm1[0]*pmat02+norm1[1]*pmat12+norm1[2]*pmat22<0) {
-							glNormal3f(-norm1[0],-norm1[1],-norm1[2]);
-						} else {
-							glNormal3fv(norm1);
-						}
+						glNormal3fv(norm1);
 					} else {
-						if (norm[0]*pmat02+norm[1]*pmat12+norm[2]*pmat22<0) {
-							glNormal3f(-norm[0],-norm[1],-norm[2]);
-						} else {
-							glNormal3fv(norm);
-						}
+						glNormal3fv(norm);
 					}
 					glVertex3fv(geom->grids.at(geom->triangles.at(k).node[k1]).coords);
 				}
@@ -629,8 +615,8 @@ void GLWidget::paintGL()
 
 		glShadeModel(GL_FLAT);
 
-		geom->drawRevolveLines(pmat02,pmat12,pmat22);
-		geom->drawBSplineSurfs(pmat02,pmat12,pmat22);
+		geom->drawRevolveLines();
+		geom->drawBSplineSurfs();
 
 		glDisable(GL_LIGHTING);
 

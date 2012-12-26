@@ -135,9 +135,9 @@ public:
 	void drawSplines();
 	void drawBSplines();
 
-	void drawBSplineSurfs(float pmat02,float pmat12,float pmat22);
+	void drawBSplineSurfs();
 
-	void drawRevolveLines(float pmat02,float pmat12,float pmat22);
+	void drawRevolveLines();
 };
 
 
