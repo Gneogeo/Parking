@@ -1,6 +1,8 @@
 #ifndef VECTOR3D_H
 #define VECTOR3D_H
 
+#include <cmath>
+
 template <typename T> 
 class vector3d {
 	vector3d(const vector3d &r);

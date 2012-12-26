@@ -836,6 +836,11 @@ void readIGES(Geometry *geom,const char *name)
 		BS.recalcCoords(0.05);
 	}
 
+	for (int i=0; i<geom->bsplinesurfs.length(); i++) {
+		BSplineSurf &BSS=geom->bsplinesurfs.at(i);
+		BSS.recalcCoords(0.2,0.2);
+	}
+
 	for (int i=0; i<geom->revolvelines.length(); i++) {
 		RevolveLine &RL=geom->revolvelines.at(i);
 		RL.line_axis_pos=lineMap.find(RL.line_axis_pos).value();

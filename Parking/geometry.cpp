@@ -1159,81 +1159,47 @@ void Geometry::drawBSplines()
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glVertexPointer(3,GL_FLOAT,0,BS.coords);
 
-		int *ar=(int*)malloc(BS.total_coords*sizeof(int));
-		for (j=0; j<BS.total_coords; j++) {
-			ar[j]=j;
-		}
-		glDrawElements(GL_LINE_STRIP,BS.total_coords,GL_UNSIGNED_INT,ar);
-		free(ar);
+		int *ar,totta;
 
+		ar=BS.strip;
+
+		while (ar[0]) {
+			totta=ar[0]; ar++;
+			glDrawElements(GL_LINE_STRIP,totta,GL_UNSIGNED_INT,ar);
+			ar+=totta;
+		}
 
 		glDisableClientState(GL_VERTEX_ARRAY);
 
-		/*
-
-		   glBegin(GL_LINE_STRIP);
-		   for (j=0; j<BS.total_coords; j++) {
-		   glVertex3fv(BS.coords[j]);
-		   }
-		   glEnd();
-		 */
 	}
 }
 
 void Geometry::drawBSplineSurfs(float pmat02,float pmat12,float pmat22)
 {
-	float ds=0.25,dt=0.25;
-	float s,t;
+	glShadeModel(GL_SMOOTH);
 	int i;
 	for (i=0; i<bsplinesurfs.length(); i++) {
 		const BSplineSurf &BSS=bsplinesurfs.at(i);
-		for (s=BSS.U[0]; s<BSS.U[1]; s+=ds) {
-			float s1=s+ds;
-			if (s1>BSS.U[1]) s1=BSS.U[1];
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glVertexPointer(3,GL_FLOAT,0,BSS.coords);
+		glEnableClientState(GL_NORMAL_ARRAY);
+		glNormalPointer(GL_FLOAT,0,BSS.normals);
 
-			int first=1;
-			float c[4][3];
-			float g1[3],g2[3],g3[3];
-			glBegin(GL_QUAD_STRIP);
-			t=BSS.V[0];
-			
-			int last=0;
-			for (;;) {
+		int *ar,totta;
 
-				if (first==1) {
-					BSS.getParamPoint(s,t,c[2]);
-					BSS.getParamPoint(s1,t,c[3]);
-					glVertex3fv(c[2]);
-					glVertex3fv(c[3]);
-					first=0;
-				} else {
-					vec_copy(c[0],c[2]);
-					vec_copy(c[1],c[3]);
-					BSS.getParamPoint(s,t,c[2]);
-					BSS.getParamPoint(s1,t,c[3]);
-					vec_diff(g1,c[0],c[3]);
-					vec_diff(g2,c[1],c[2]);
-					vec_cross_product(g3,g1,g2);
-					vec_normalize(g3);
-					if (g3[0]*pmat02+g3[1]*pmat12+g3[2]*pmat22<0) {
-						vec_flip(g3,g3);
-					}
-					glNormal3fv(g3);
-					glVertex3fv(c[2]);
-					glVertex3fv(c[3]);
-				}
-				t+=dt;
-				if (last==1) break;
-				if (t>=BSS.V[1]) {
-					t=BSS.V[1];
-					last=1;
-				}
-			}
-			glEnd();
+		ar=BSS.strip;
+
+		while (ar[0]) {
+			totta=ar[0]; ar++;
+			glDrawElements(GL_TRIANGLE_STRIP,totta,GL_UNSIGNED_INT,ar);
+			ar+=totta;
 		}
 
+		glDisableClientState(GL_VERTEX_ARRAY);
+		glDisableClientState(GL_NORMAL_ARRAY);
+
 	}
-	
+	glShadeModel(GL_FLAT);
 }
 
 

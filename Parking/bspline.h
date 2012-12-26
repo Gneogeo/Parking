@@ -17,6 +17,8 @@ public:
 
 	int total_coords;
 	float (*coords)[3];
+
+	int *strip;
 	
 	int getParamPoint(float t,float outp[3]) const;
 
@@ -40,13 +42,18 @@ public:
 	float *T; /* -M2:1+K2 */
 	float *W; /* (0:K1),(0:K2) */
 	float (*P)[3]; /* (0:K1),(0:K2) */
-	float U[3];
-	float V[3];
+	float U[2];
+	float V[2];
 
 	int total_coords;
 	float (*coords)[3];
+	int *strip;
+
+	float (*normals)[3];
 
 	int getParamPoint(float s,float t,float outp[3]) const;
+
+	void recalcCoords(float ds,float dt);
 
 
 };
