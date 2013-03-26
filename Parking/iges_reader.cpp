@@ -160,7 +160,6 @@ void readIGES(Geometry *geom,const char *name)
 	QString globalData=QString::fromUtf8("");
 	while (ok) {
 		if (igs.letterCode!='G') break;
-		stripTrailingSpaces(igs.data);
 		globalData.append(QString::fromUtf8(igs.data));
 		ok=igs.readLine(fp);
 	}
@@ -188,6 +187,12 @@ void readIGES(Geometry *geom,const char *name)
 			}
 		}
 		while (pnt[0]!=0) {
+			if (globalParamCount>=26) break;
+			while (pnt[0]==' ') {
+				pnt++;
+				if (pnt[0]=='\0') break;
+			}
+			if (pnt[0]=='\0') break;
 			switch (globalParamCount) {
 				case 2: case 3: case 4: case 5:
 				case 11:
@@ -850,7 +855,7 @@ void readIGES(Geometry *geom,const char *name)
 
 	for (int i=0; i<geom->bsplinesurfs.length(); i++) {
 		BSplineSurf &BSS=geom->bsplinesurfs.at(i);
-		BSS.recalcCoords(0.2,0.2);
+		BSS.recalcCoords((BSS.U[1]-BSS.U[0])*0.2,(BSS.V[1]-BSS.V[0])*0.2);
 	}
 
 	for (int i=0; i<geom->revolvelines.length(); i++) {
