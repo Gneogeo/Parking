@@ -7,9 +7,12 @@
 
 #include "geometry.h"
 
+static parking *form=0;
+
 parking::parking(QWidget *parent, Qt::WFlags flags)
 	: QMainWindow(parent, flags)
 {
+	form=this;
 	ui.setupUi(this);
 	QGridLayout *gd=new QGridLayout(ui.centralWidget);
 	Widget=new GLWidget(ui.centralWidget);
@@ -43,10 +46,32 @@ parking::~parking()
 }
 
 
+static QFileDialog *fileSelect;
+
+QString selectOpenFileName(const QString &filter)
+{
+	if (!fileSelect) {
+		fileSelect=new QFileDialog(form,QString::fromLocal8Bit("Open File..."),QString::fromLocal8Bit(""));
+	}
+
+	fileSelect->setFilter(filter);
+
+	QString file=QString::fromLocal8Bit("");
+	if (fileSelect->exec()==QDialog::Accepted) {
+		QStringList fileList;
+		fileList=fileSelect->selectedFiles();
+
+		if (fileList.size()>0) {
+			file=fileList.at(0);
+		}
+	}
+	return file;
+}
+
 void parking::loadSTL()
 {
-	QString file=QFileDialog::getOpenFileName(this,QString::fromLocal8Bit("Open File..."),
-		QString::fromLocal8Bit(""),QString::fromLocal8Bit("STL Files (*.stl)"));
+	QString file=selectOpenFileName(QString::fromLocal8Bit("STL Files (*.stl)"));
+
 	if (!file.isEmpty()) {
 		if (!Widget->geom) {
 			delete Widget->geom;
@@ -55,13 +80,12 @@ void parking::loadSTL()
 
 		Widget->geom->loadSTL(file.toLocal8Bit().data());
 	}
-	
 }
 
 void parking::loadDXF()
 {
-	QString file=QFileDialog::getOpenFileName(this,QString::fromLocal8Bit("Open File..."),
-		QString::fromLocal8Bit(""),QString::fromLocal8Bit("DXF Files (*.dxf)"));
+	QString file=selectOpenFileName(QString::fromLocal8Bit("DXF Files (*.dxf)"));
+
 	if (!file.isEmpty()) {
 		if (!Widget->geom) {
 			delete Widget->geom;
@@ -74,8 +98,8 @@ void parking::loadDXF()
 
 void parking::load3DS()
 {
-	QString file=QFileDialog::getOpenFileName(this,QString::fromLocal8Bit("Open File..."),
-		QString::fromLocal8Bit(""),QString::fromLocal8Bit("3DS Files (*.3ds)"));
+	QString file=selectOpenFileName(QString::fromLocal8Bit("3DS Files (*.3ds)"));
+
 	if (!file.isEmpty()) {
 		if (!Widget->geom) {
 			delete Widget->geom;
@@ -89,16 +113,16 @@ void parking::load3DS()
 
 void parking::loadIGES()
 {
-        QString file=QFileDialog::getOpenFileName(this,QString::fromLocal8Bit("Open File..."),
-                QString::fromLocal8Bit(""),QString::fromLocal8Bit("IGES Files (*.igs ; *.iges)"));
-        if (!file.isEmpty()) {
-                if (!Widget->geom) {
-                        delete Widget->geom;
-                }
-                Widget->geom=new Geometry;
+	QString file=selectOpenFileName(QString::fromLocal8Bit("IGES Files (*.igs ; *.iges)"));
 
-                Widget->geom->loadIGES(file.toLocal8Bit().data());
-        }
+	if (!file.isEmpty()) {
+		if (!Widget->geom) {
+			delete Widget->geom;
+		}
+		Widget->geom=new Geometry;
+
+		Widget->geom->loadIGES(file.toLocal8Bit().data());
+	}
 }
 
 
