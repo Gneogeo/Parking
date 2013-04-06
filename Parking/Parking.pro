@@ -20,6 +20,7 @@ SOURCES += bspline.cpp \
 	   main.cpp  \
 	   mgl.cpp  \
 	   parking.cpp \
+	   q_bsplinesurf.cpp \
 	   stl_reader.cpp
 
 HEADERS  += bspline.h \
@@ -31,7 +32,9 @@ HEADERS  += bspline.h \
 	    mgl.h  \
 	    myvector.h  \
 	    parking.h	\
+	    q_bsplinesurf.h \
 	    stl_reader.h  \
 	    vector3d.h
 
-FORMS    += parking.ui
+FORMS    += parking.ui \
+	    q_bsplinesurf.ui

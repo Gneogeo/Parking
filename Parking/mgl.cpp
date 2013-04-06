@@ -228,11 +228,13 @@ void GLWidget::fixView()
 
 	if (geom->grids.length()) {
                 unsigned int i,j;
-		float xmin,xmax,ymin,ymax;
+		float xmin,xmax,ymin,ymax,zmin,zmax;
 		xmin=FLT_MAX;
 		xmax=-FLT_MAX;
 		ymin=FLT_MAX;
 		ymax=-FLT_MAX;
+		zmin=FLT_MAX;
+		zmax=-FLT_MAX;
 
 		int first=1;
 		
@@ -248,6 +250,8 @@ void GLWidget::fixView()
 			xmax = vec[0]>xmax ? vec[0] : xmax;
 			ymin = vec[1]<ymin ? vec[1] : ymin;
 			ymax = vec[1]>ymax ? vec[1] : ymax;
+			zmin = vec[2]<zmin ? vec[2] : zmin;
+			zmax = vec[2]>zmax ? vec[2] : zmax;
 
 		}
 
@@ -264,6 +268,8 @@ void GLWidget::fixView()
 				xmax = vec[0]>xmax ? vec[0] : xmax;
 				ymin = vec[1]<ymin ? vec[1] : ymin;
 				ymax = vec[1]>ymax ? vec[1] : ymax;
+				zmin = vec[2]<zmin ? vec[2] : zmin;
+				zmax = vec[2]>zmax ? vec[2] : zmax;
 			}
 		}
 
@@ -280,6 +286,8 @@ void GLWidget::fixView()
 				xmax = vec[0]>xmax ? vec[0] : xmax;
 				ymin = vec[1]<ymin ? vec[1] : ymin;
 				ymax = vec[1]>ymax ? vec[1] : ymax;
+				zmin = vec[2]<zmin ? vec[2] : zmin;
+				zmax = vec[2]>zmax ? vec[2] : zmax;
 			}
 		}
 		if (xmin>xmax) xmin=xmax=0;
@@ -287,10 +295,13 @@ void GLWidget::fixView()
 
 		float cx=(xmin+xmax)*0.5;
 		float cy=(ymin+ymax)*0.5;
+		float cz=(zmin+zmax)*0.5;
 		float dx=(xmax-xmin)*0.5;
 		float dy=(ymax-ymin)*0.5;
 		pmat[12]-=cx;
 		pmat[13]-=cy;
+		pmat[14]-=cz;
+		
 		glLoadMatrixf(pmat);
 
 		zoom= dx > dy ? dx : dy;

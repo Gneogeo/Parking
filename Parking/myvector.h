@@ -31,6 +31,13 @@ public:
                 len++;
         }
 
+	T *appendEmpty() {
+		T Elem={0};
+		append(Elem);
+		return data[len-1];
+
+	}
+
         void clear() {
                 len=0;
         }
@@ -42,7 +49,7 @@ public:
                 if (ln<len) len=ln;
         }
 
-        unsigned int length() {return len;}
+        unsigned int length() const {return len;}
 
         const T *getData() {return data;}
 

@@ -7,6 +7,8 @@
 class Geometry;
 class GLWidget;
 
+class Q_BSplineSurf;
+
 class parking : public QMainWindow
 {
 	Q_OBJECT
@@ -14,6 +16,8 @@ class parking : public QMainWindow
 public:
 	parking(QWidget *parent = 0, Qt::WFlags flags = 0);
 	~parking();
+
+	Q_BSplineSurf *bsplinesurf;
 
 	GLWidget *Widget;
 
@@ -32,6 +36,8 @@ public:
 		void orthoView_XY_clicked();
 		void orthoView_YZ_clicked();
 		void orthoView_ZX_clicked();
+
+		void exit();
 
 private:
 	Ui::parkingClass ui;
