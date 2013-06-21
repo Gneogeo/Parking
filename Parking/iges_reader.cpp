@@ -5,6 +5,7 @@
 #include <math.h>
 #include "geometry.h"
 #include "coord_system.h"
+#include "matrix.h"
 
 #include <stdio.h>
 #include <qdebug.h>
@@ -267,6 +268,7 @@ void readIGES(Geometry *geom,const char *name)
 	QMap<int,int> gridCoordMap;
 	QMap<int,int> bsplineCoordMap;
 	QMap<int,int> bsplineSurfCoordMap;
+	QMap<int,int> arcEllipseCoordMap;
 
 	QMap<int,int> lineMap;
 
@@ -353,6 +355,111 @@ void readIGES(Geometry *geom,const char *name)
 				}
 				break;
 			case 104: /*Conic section*/
+				{
+					float a,b,c,d,e,f;
+					float zt;
+					float x1,y1,x2,y2;
+
+					pnt+=igs.readDelimString(pnt,param);
+					a = myatof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					b = myatof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					c = myatof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					d = myatof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					e = myatof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					f = myatof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					zt = myatof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					x1 = myatof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					y1 = myatof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					x2 = myatof(param);
+					pnt+=igs.readDelimString(pnt,param);
+					y2 = myatof(param);
+
+					float Q1,Q2,Q3;
+					Q1=a*(c*f-e*e/4.)+(b/2.)*(e*d/4.-b*f/2.)+(d/2.)*(b*e/4.-c*d/2.);
+					Q2=a*c-b*b/4.;
+					Q3=a+c;
+
+					float A[2][2], B[2], C;
+					A[0][0]=a; A[0][1]=b*0.5;
+					A[1][0]=b*0.5; A[1][1]=c;
+
+					B[0]=d; B[1]=e;
+					C = f;
+				
+
+					float P[2][2],L[2][2];
+					eigen_symmetrical(A,P,L);
+
+					CoordinateSystem<float> CS0;
+					float cC[3];
+					cC[0]=0; cC[1]=0; cC[2]=zt;
+
+					CoordinateSystem<float> CS1;
+					float cX[3],cY[3],cZ[3];
+					cX[0] = P[0][0]; cY[0] = P[0][1]; cZ[0] = 0;
+					cX[1] = P[1][0]; cY[1] = P[1][1]; cZ[1] = 0;
+					cX[2] = 0;       cY[2] = 0;       cZ[2] = 1;
+
+					CS1.setAxis(cX,cY,cZ);
+
+					
+
+
+
+					if (Q2>0) {
+						float Z0[2];
+						float D[2];
+						float E;
+						multiply_122(D,B,P);
+						Z0[0]=-0.5*D[0]/L[0][0];
+						Z0[1]=-0.5*D[1]/L[1][1];
+						E = -0.5*(D[0]*Z0[0]+D[1]*Z0[1])-C;
+
+						float R1,R2;
+						R1=sqrt(E/L[0][0]);
+						R2=sqrt(E/L[1][1]);
+
+						CoordinateSystem<float> CS2;
+						cC[0]=Z0[0]; cC[1]=Z0[1]; cC[2]=0;
+						CS2.setCenter(cC);
+
+						CS1.fromLocalToGlobal(&CS2);
+						CS0.fromLocalToGlobal(&CS2);
+
+						ArcEllipse AE;
+						AE.fmin=0;
+						AE.fmax=6.28;
+						AE.xradius=R1;
+						AE.yradius=R2;
+						AE.XYZ=CS2;
+
+						int aeid=geom->addArcEllipse(AE);
+						if (igesd->transMatrix!=0) {
+							arcEllipseCoordMap.insert(aeid,igesd->transMatrix);
+						}
+
+
+
+					
+
+					} else if (Q2<0) {
+						/*Hyperbola*/
+					} else if (Q2==0) {
+						/*Parabola*/
+					}
+
+
+
+				}
 #if 0
 				{
 					float A,B,C,D,E,F;
@@ -848,6 +955,20 @@ void readIGES(Geometry *geom,const char *name)
 		}
 	}
 
+	for (it=arcEllipseCoordMap.begin(); it!=arcEllipseCoordMap.end(); ++it) {
+		int c1_id,c2_id;
+		c1_id=it.key();
+		c2_id=it.value();
+
+		ArcEllipse *T=&geom->arcellipses.at( it.key() );
+
+		if (crdMap.find(c2_id)!=crdMap.end()) {
+			CoordinateSystem<float> c=crdMap.find(c2_id).value();
+
+			c.fromLocalToGlobal(&T->XYZ);
+		}
+	}
+
 	for (int i=0; i<geom->bsplines.length(); i++) {
 		BSpline & BS=geom->bsplines.at(i);
 		BS.recalcCoords(0.05);
@@ -856,6 +977,11 @@ void readIGES(Geometry *geom,const char *name)
 	for (int i=0; i<geom->bsplinesurfs.length(); i++) {
 		BSplineSurf &BSS=geom->bsplinesurfs.at(i);
 		BSS.recalcCoords((BSS.U[1]-BSS.U[0])*0.2,(BSS.V[1]-BSS.V[0])*0.2);
+	}
+
+	for (int i=0; i<geom->arcellipses.length(); i++) {
+		ArcEllipse &AE = geom->arcellipses.at(i);
+		AE.recalcCoords(0.05);
 	}
 
 	for (int i=0; i<geom->revolvelines.length(); i++) {

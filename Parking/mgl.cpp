@@ -660,6 +660,7 @@ void GLWidget::paintGL()
 		geom->drawArcs();
 		geom->drawSplines();
 		geom->drawBSplines();
+		geom->drawArcEllipses();
 
 
 		glPointSize(4);

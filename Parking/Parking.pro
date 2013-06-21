@@ -21,7 +21,8 @@ SOURCES += bspline.cpp \
 	   mgl.cpp  \
 	   parking.cpp \
 	   q_bsplinesurf.cpp \
-	   stl_reader.cpp
+	   stl_reader.cpp \
+    conic.cpp
 
 HEADERS  += bspline.h \
 	    chunck3ds_reader.h  \
@@ -29,12 +30,14 @@ HEADERS  += bspline.h \
 	    dxf_reader.h  \
 	    geometry.h  \
 	    iges_reader.h \
+	    matrix.h \
 	    mgl.h  \
 	    myvector.h  \
 	    parking.h	\
 	    q_bsplinesurf.h \
 	    stl_reader.h  \
-	    vector3d.h
+	    vector3d.h \
+    conic.h
 
 FORMS    += parking.ui \
 	    q_bsplinesurf.ui

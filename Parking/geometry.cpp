@@ -165,6 +165,12 @@ int Geometry::addBSplineSurf(const BSplineSurf &BSS)
 	return bsplinesurfs.length()-1;
 }
 
+int Geometry::addArcEllipse(const ArcEllipse &AE)
+{
+	arcellipses.append(AE);
+	return arcellipses.length()-1;
+}
+
 void Geometry::calcTrianglesNormals()
 {
         unsigned int k;
@@ -1201,6 +1207,32 @@ void Geometry::drawBSplineSurfs()
 	glShadeModel(GL_FLAT);
 }
 
+void Geometry::drawArcEllipses()
+{
+	glColor4fv(lineStripColor);
+	int i,j;
+	float t;
+	float dt=0.05;
+	float X[3];
+	for (i=0; i<arcellipses.length(); i++) {
+		const ArcEllipse & AE=arcellipses.at(i);
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glVertexPointer(3,GL_FLOAT,0,AE.coords);
+
+		int *ar,totta;
+
+		ar=AE.strip;
+
+		while (ar[0]) {
+			totta=ar[0]; ar++;
+			glDrawElements(GL_LINE_STRIP,totta,GL_UNSIGNED_INT,ar);
+			ar+=totta;
+		}
+
+		glDisableClientState(GL_VERTEX_ARRAY);
+
+	}
+}
 
 void Geometry::drawRevolveLines()
 {

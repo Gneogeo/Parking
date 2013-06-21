@@ -19,6 +19,14 @@ class CoordinateSystem {
 		vec_zero(Z); Z[2]=1;
 	}
 
+	CoordinateSystem<T> & operator= (const CoordinateSystem<T> &r) {
+		vec_copy(center,r.center);
+		vec_copy(X,r.X);
+		vec_copy(Y,r.Y);
+		vec_copy(Z,r.Z);
+		return *this;
+	}
+
 	void setGlobal() {
 		vec_zero(center);
 		vec_zero(X); X[0]=1;
@@ -60,6 +68,12 @@ class CoordinateSystem {
 		tmp[1]=X[1]*crd->Z[0]+Y[1]*crd->Z[1]+Z[1]*crd->Z[2];
 		tmp[2]=X[2]*crd->Z[0]+Y[2]*crd->Z[1]+Z[2]*crd->Z[2];
 		vec_copy(crd->Z,tmp);
+	}
+
+	void fromGlobalToLocal(T out[3],const T inp[3]) const {
+		out[0] = X[0]*(inp[0]-center[0]) + X[1]*(inp[1]-center[1]) + X[2]*(inp[2]-center[2]);
+		out[1] = Y[0]*(inp[0]-center[0]) + Y[1]*(inp[1]-center[1]) + Y[2]*(inp[2]-center[2]);
+		out[2] = Z[0]*(inp[0]-center[0]) + Z[1]*(inp[1]-center[1]) + Z[2]*(inp[2]-center[2]);
 	}
 	
 };

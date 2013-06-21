@@ -9,6 +9,7 @@
 #include "vector3d.h"
 #include "coord_system.h"
 #include "bspline.h"
+#include "conic.h"
 
 #include "myvector.h"
 
@@ -46,6 +47,7 @@ public:
 	float fmax;
 };
 
+
 class Spline {
 public:
 	float Px[4];
@@ -77,6 +79,7 @@ public:
 	myVector<Spline> splines;
 	myVector<BSpline> bsplines;
 	myVector<BSplineSurf> bsplinesurfs;
+	myVector<ArcEllipse> arcellipses;
 
 	myVector<RevolveLine> revolvelines;
 
@@ -99,6 +102,7 @@ public:
 	int addSpline(float Px[4],float Py[4],float Pz[4]);
 	int addBSpline(const BSpline &BS);
 	int addBSplineSurf(const BSplineSurf &BSS);
+	int addArcEllipse(const ArcEllipse &AE);
 	
 	void shrinkGeometry();
 	void compressGrids();
@@ -134,6 +138,7 @@ public:
 	void drawArcs();
 	void drawSplines();
 	void drawBSplines();
+	void drawArcEllipses();
 
 	void drawBSplineSurfs();
 
