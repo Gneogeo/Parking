@@ -45,14 +45,15 @@ inline void eigen_symmetrical(const T A[2][2],T P[2][2],T L[2][2])
 	T det2 , det;
 	det2 = (a-c)*(a-c)+b*b;
 	det = sqrt(det2);
-	
+
+#if 0	
 	L[0][0]=(a+c+det)*0.5;
 	L[0][1]=0;
 	L[1][0]=0;
 	L[1][1]=(a+c-det)*0.5;
 
 	T f,sinf,cosf;
-	
+
 	f = atan2(a-c-det,b);
 	sinf = sin(f);
 	cosf = cos(f);
@@ -60,6 +61,21 @@ inline void eigen_symmetrical(const T A[2][2],T P[2][2],T L[2][2])
 	P[0][0] =  cosf; P[0][1] = sinf;
 	P[1][0] = -sinf; P[1][1] = cosf; 
 
+#else
+	L[0][0]=(a+c-det)*0.5;
+	L[0][1]=0;
+	L[1][0]=0;
+	L[1][1]=(a+c+det)*0.5;
+
+	T f,sinf,cosf;
+
+	f = atan2(a-c-det,b);
+	sinf = sin(f);
+	cosf = cos(f);
+
+	P[0][0] =  sinf; P[0][1] =-cosf;
+	P[1][0] =  cosf; P[1][1] = sinf;
+#endif
 
 }
 

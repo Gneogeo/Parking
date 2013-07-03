@@ -171,6 +171,12 @@ int Geometry::addArcEllipse(const ArcEllipse &AE)
 	return arcellipses.length()-1;
 }
 
+int Geometry::addArcHyperbola(const ArcHyperbola &AH)
+{
+	archyperbolas.append(AH);
+	return archyperbolas.length()-1;
+}
+
 void Geometry::calcTrianglesNormals()
 {
         unsigned int k;
@@ -1222,6 +1228,33 @@ void Geometry::drawArcEllipses()
 		int *ar,totta;
 
 		ar=AE.strip;
+
+		while (ar[0]) {
+			totta=ar[0]; ar++;
+			glDrawElements(GL_LINE_STRIP,totta,GL_UNSIGNED_INT,ar);
+			ar+=totta;
+		}
+
+		glDisableClientState(GL_VERTEX_ARRAY);
+
+	}
+}
+
+void Geometry::drawArcHyperbolas()
+{
+	glColor4fv(lineStripColor);
+	int i,j;
+	float t;
+	float dt=0.05;
+	float X[3];
+	for (i=0; i<archyperbolas.length(); i++) {
+		const ArcHyperbola & AH=archyperbolas.at(i);
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glVertexPointer(3,GL_FLOAT,0,AH.coords);
+
+		int *ar,totta;
+
+		ar=AH.strip;
 
 		while (ar[0]) {
 			totta=ar[0]; ar++;

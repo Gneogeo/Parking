@@ -80,6 +80,7 @@ public:
 	myVector<BSpline> bsplines;
 	myVector<BSplineSurf> bsplinesurfs;
 	myVector<ArcEllipse> arcellipses;
+	myVector<ArcHyperbola> archyperbolas;
 
 	myVector<RevolveLine> revolvelines;
 
@@ -103,6 +104,7 @@ public:
 	int addBSpline(const BSpline &BS);
 	int addBSplineSurf(const BSplineSurf &BSS);
 	int addArcEllipse(const ArcEllipse &AE);
+	int addArcHyperbola(const ArcHyperbola &AH);
 	
 	void shrinkGeometry();
 	void compressGrids();
@@ -139,6 +141,7 @@ public:
 	void drawSplines();
 	void drawBSplines();
 	void drawArcEllipses();
+	void drawArcHyperbolas();
 
 	void drawBSplineSurfs();
 
