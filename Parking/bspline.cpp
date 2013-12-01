@@ -52,7 +52,10 @@ BSpline::~BSpline()
 
 int BSpline::getParamPoint(float t,float outp[3]) const
 {
-	if (t<V[0] || t>V[1]) return 0;
+	if (t<V[0] || t>V[1]) {
+		vec_zero(outp);
+		return 0;
+	}
 
 	float *b;
 	b=new float[K+1];
@@ -204,8 +207,14 @@ BSplineSurf::~BSplineSurf()
 
 int BSplineSurf::getParamPoint(float s,float t,float outp[3]) const
 {
-	if (s<U[0] || s>U[1]) return 0;
-	if (t<V[0] || t>V[1]) return 0;
+	if (s<U[0] || s>U[1]) {
+		vec_zero(outp);
+		return 0;
+	}
+	if (t<V[0] || t>V[1]) {
+		vec_zero(outp);
+		return 0;
+	}
 
 	float *b1,*b2;
 	b1=new float[K1+1];
