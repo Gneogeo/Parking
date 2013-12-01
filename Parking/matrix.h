@@ -62,10 +62,10 @@ inline void eigen_symmetrical(const T A[2][2],T P[2][2],T L[2][2])
 	P[1][0] = -sinf; P[1][1] = cosf; 
 
 #else
-	L[0][0]=(a+c-det)*0.5;
+	L[0][0]=(a+c-det)*0.5f;
 	L[0][1]=0;
 	L[1][0]=0;
-	L[1][1]=(a+c+det)*0.5;
+	L[1][1]=(a+c+det)*0.5f;
 
 	T f,sinf,cosf;
 

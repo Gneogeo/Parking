@@ -63,7 +63,7 @@ inline void vec_normalize(T v[3])
 	vec_dot_product(&l,v,v);
 	if (l==0 || l==1) return;
 	l=sqrt(l);
-	l=1./l;
+	l=(T)1./l;
 	v[0]=v[0]*l;
 	v[1]=v[1]*l;
 	v[2]=v[2]*l;

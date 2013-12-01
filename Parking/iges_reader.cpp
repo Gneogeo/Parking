@@ -11,6 +11,8 @@
 #include <qdebug.h>
 #include <QSet>
 
+#define M_PI 3.14159
+
 static float myatof(const char *d)
 {
 	char buffer[1024];
@@ -36,7 +38,14 @@ static void stripTrailingSpaces(char *d)
 }
 
 class IGES_line {
+
+	char *cpnt;
+
 	public:
+
+	char *pnt;
+	char param[100];
+
 	char data[73];
 	char letterCode;
 	int sequenceNumber;
@@ -44,9 +53,13 @@ class IGES_line {
 	char ParameterDelimiterChar;
 	char RecordDelimiterChar;
 
+	
+
 	IGES_line() { 
 		ParameterDelimiterChar=',';
 		RecordDelimiterChar=';';
+		pnt = 0;
+		cpnt = 0;
 	}
 
 	int readLine(FILE *fp) {
@@ -61,7 +74,18 @@ class IGES_line {
 		return 1;
 	}
 
-	int readDelimString(const char *data,char *target) {
+	void initString(const char *str) {
+		cpnt=strdup(str);
+		pnt=cpnt;
+	}
+
+	void destroyString() {
+		free(cpnt);
+		cpnt = 0;
+		pnt = 0;
+	}
+
+	int readDelimString_old(const char *data,char *target) {
 		int k=0;
 		const char *pdata=data;
 		while (pdata[0]!=ParameterDelimiterChar && pdata[0]!=RecordDelimiterChar) {
@@ -75,6 +99,26 @@ class IGES_line {
 		return k;
 	}
 
+	void readDelimString() {
+		pnt += readDelimString_old(pnt,param);
+	}
+	void jumpToken() {
+		pnt += readDelimString_old(pnt,param);
+	}
+	int read_int() {
+		pnt += readDelimString_old(pnt,param);
+		return atoi(param);
+	}
+	float read_float() {
+		pnt += readDelimString_old(pnt,param);
+		return myatof(param);
+	}
+	void read_float_multi(float *p,int n) {
+		for (int i=0; i<n; i++) {
+			pnt += readDelimString_old(pnt,param);
+			p[i] = myatof(param);
+		}
+	}
 };
 
 static int readHollerithString(const char *data,char *target)
@@ -207,7 +251,7 @@ void readIGES(Geometry *geom,const char *name)
 					}
 					break;
 				default:
-					pnt+=igs.readDelimString(pnt,GlobalParam[globalParamCount]);
+					pnt+=igs.readDelimString_old(pnt,GlobalParam[globalParamCount]);
 					break;
 
 			}
@@ -304,13 +348,11 @@ void readIGES(Geometry *geom,const char *name)
 		IGES_directory *igesd;
 		igesd=&dirlist.at(igesCount);
 
-		char param[100];
-		char *cpnt,*pnt;
+		
+		igs.initString(ParameterLine.toLocal8Bit().data());
+		
 
-		cpnt=strdup(ParameterLine.toLocal8Bit().data());
-		pnt=cpnt;
-
-		pnt+=igs.readDelimString(pnt,param);
+		igs.readDelimString();
 
 		if (!usedParamSet.contains(igesd->entityType)) {
 			qDebug("Entity: %d",igesd->entityType);
@@ -322,27 +364,20 @@ void readIGES(Geometry *geom,const char *name)
 				{
 					float x1,y1,x2,y2,x3,y3;
 					float z;
-					pnt+=igs.readDelimString(pnt,param);
-					z=myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					x1=myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					y1=myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					x2=myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					y2=myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					x3=myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					y3=myatof(param);
+					z = igs.read_float();
+					x1 = igs.read_float();
+					y1 = igs.read_float();
+					x2 = igs.read_float();
+					y2 = igs.read_float();
+					x3 = igs.read_float();
+					y3 = igs.read_float();
 					CoordinateSystem<float> C;
 					float xC[3];
 					xC[0]=x1; xC[1]=y1; xC[2]=z;
 					C.setCenter(xC);
 					float fmin=atan2(y2-y1,x2-x1);
 					float fmax=atan2(y3-y1,x3-x1);
-					if (fmax<fmin) fmax+=2*3.14159;
+					if (fmax<fmin) fmax+=2*M_PI;
 					float rad=sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
 					int arcid=geom->addArc(C,rad,fmin,fmax);
 					if (igesd->transMatrix!=0) {
@@ -357,28 +392,17 @@ void readIGES(Geometry *geom,const char *name)
 					float zt;
 					float x1,y1,x2,y2;
 
-					pnt+=igs.readDelimString(pnt,param);
-					a = myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					b = myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					c = myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					d = myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					e = myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					f = myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					zt = myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					x1 = myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					y1 = myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					x2 = myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					y2 = myatof(param);
+					a = igs.read_float();
+					b = igs.read_float();
+					c = igs.read_float();
+					d = igs.read_float();
+					e = igs.read_float();
+					f = igs.read_float();
+					zt = igs.read_float();
+					x1 = igs.read_float();
+					y1 = igs.read_float();
+					x2 = igs.read_float();
+					y2 = igs.read_float();
 
 					float Q1,Q2,Q3;
 					Q1=a*(c*f-e*e/4.)+(b/2.)*(e*d/4.-b*f/2.)+(d/2.)*(b*e/4.-c*d/2.);
@@ -561,20 +585,15 @@ void readIGES(Geometry *geom,const char *name)
 				break;
 			case 106: /*Linear Path*/
 				{
-					pnt+=igs.readDelimString(pnt,param);
-					int IP=atoi(param);
-					pnt+=igs.readDelimString(pnt,param);
-					int N=atoi(param);
+					int IP = igs.read_int();
+					int N = igs.read_int();
 					if (IP==1) {
-						pnt+=igs.readDelimString(pnt,param);
-						float Z=myatof(param);
+						float Z = igs.read_float();
 						float X,Y;
 						int j;
 						for (j=0; j<N; j++) {
-							pnt+=igs.readDelimString(pnt,param);
-							X=myatof(param);
-							pnt+=igs.readDelimString(pnt,param);
-							Y=myatof(param);
+							X = igs.read_float();
+							Y = igs.read_float();
 
 							int gid=geom->addGrid(X,Y,Z);
 							if (igesd->transMatrix!=0) {
@@ -588,12 +607,9 @@ void readIGES(Geometry *geom,const char *name)
 						float X,Y,Z;
 						int j;
 						for (j=0; j<N; j++) {
-							pnt+=igs.readDelimString(pnt,param);
-							X=myatof(param);
-							pnt+=igs.readDelimString(pnt,param);
-							Y=myatof(param);
-							pnt+=igs.readDelimString(pnt,param);
-							Z=myatof(param);
+							X = igs.read_float();
+							Y = igs.read_float();
+							Z = igs.read_float();
 
 							int gid=geom->addGrid(X,Y,Z);
 							if (igesd->transMatrix!=0) {
@@ -611,22 +627,16 @@ void readIGES(Geometry *geom,const char *name)
 				{
 					float x,y,z;
 					int g1,g2;
-					pnt+=igs.readDelimString(pnt,param);
-					x=myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					y=myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					z=myatof(param);
+					x = igs.read_float();
+					y = igs.read_float();
+					z = igs.read_float();
 					g1=geom->addGrid(x,y,z);
 					if (igesd->transMatrix!=0) {
 						gridCoordMap.insert(g1,igesd->transMatrix);
 					}
-					pnt+=igs.readDelimString(pnt,param);
-					x=myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					y=myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					z=myatof(param);
+					x = igs.read_float();
+					y = igs.read_float();
+					z = igs.read_float();
 					g2=geom->addGrid(x,y,z);
 					if (igesd->transMatrix!=0) {
 						gridCoordMap.insert(g2,igesd->transMatrix);
@@ -640,34 +650,20 @@ void readIGES(Geometry *geom,const char *name)
 					int N;
 					float Px[4],Py[4],Pz[4];
 					float *T;
-					pnt+=igs.readDelimString(pnt,param);
-					pnt+=igs.readDelimString(pnt,param);
-					pnt+=igs.readDelimString(pnt,param);
-					pnt+=igs.readDelimString(pnt,param);
-					N=atoi(param);
+					igs.readDelimString();
+					igs.readDelimString();
+					igs.readDelimString();
+					N = igs.read_int();
 
 					int j;
 
 					T=new float[N+1];
-					for (j=0; j<=N; j++) {
-						pnt+=igs.readDelimString(pnt,param);
-						T[j]=myatof(param);
-					}
+					igs.read_float_multi(T,N+1);
+					
 					for (j=0; j<N; j++) {
-						pnt+=igs.readDelimString(pnt,param); Px[0]=myatof(param);
-						pnt+=igs.readDelimString(pnt,param); Px[1]=myatof(param);
-						pnt+=igs.readDelimString(pnt,param); Px[2]=myatof(param);
-						pnt+=igs.readDelimString(pnt,param); Px[3]=myatof(param);
-
-						pnt+=igs.readDelimString(pnt,param); Py[0]=myatof(param);
-						pnt+=igs.readDelimString(pnt,param); Py[1]=myatof(param);
-						pnt+=igs.readDelimString(pnt,param); Py[2]=myatof(param);
-						pnt+=igs.readDelimString(pnt,param); Py[3]=myatof(param);
-
-						pnt+=igs.readDelimString(pnt,param); Pz[0]=myatof(param);
-						pnt+=igs.readDelimString(pnt,param); Pz[1]=myatof(param);
-						pnt+=igs.readDelimString(pnt,param); Pz[2]=myatof(param);
-						pnt+=igs.readDelimString(pnt,param); Pz[3]=myatof(param);
+						igs.read_float_multi(Px,4);
+						igs.read_float_multi(Py,4);
+						igs.read_float_multi(Pz,4);
 
 						float s,s2,s3;
 						s=T[j+1]-T[j];
@@ -689,15 +685,15 @@ void readIGES(Geometry *geom,const char *name)
 					float f1;
 					float f2;
 
-					pnt+=igs.readDelimString(pnt,param); axis_id=atoi(param);
-					pnt+=igs.readDelimString(pnt,param); gen_id=atoi(param);
-					pnt+=igs.readDelimString(pnt,param); f1=myatof(param);
-                                        pnt+=igs.readDelimString(pnt,param); f2=myatof(param);
+					axis_id = igs.read_int();
+					gen_id = igs.read_int();
+					f1 = igs.read_float();
+                    f2 = igs.read_float();
 
 
 
 					IGES_directory *gend;
-                                        gend=&dirlist.at((gen_id-1)/2);
+                    gend=&dirlist.at((gen_id-1)/2);
 					if (gend->entityType==110) {
 						RevolveLine RL;
 						RL.line_axis_pos=axis_id;
@@ -718,18 +714,18 @@ void readIGES(Geometry *geom,const char *name)
 				{
 					CoordinateSystem<float> Crd;
 					float x[3],y[3],z[3],c[3];
-					pnt+=igs.readDelimString(pnt,param); x[0]=myatof(param);
-					pnt+=igs.readDelimString(pnt,param); y[0]=myatof(param);
-					pnt+=igs.readDelimString(pnt,param); z[0]=myatof(param);
-					pnt+=igs.readDelimString(pnt,param); c[0]=myatof(param);
-					pnt+=igs.readDelimString(pnt,param); x[1]=myatof(param);
-					pnt+=igs.readDelimString(pnt,param); y[1]=myatof(param);
-					pnt+=igs.readDelimString(pnt,param); z[1]=myatof(param);
-					pnt+=igs.readDelimString(pnt,param); c[1]=myatof(param);
-					pnt+=igs.readDelimString(pnt,param); x[2]=myatof(param);
-					pnt+=igs.readDelimString(pnt,param); y[2]=myatof(param);
-					pnt+=igs.readDelimString(pnt,param); z[2]=myatof(param);
-					pnt+=igs.readDelimString(pnt,param); c[2]=myatof(param);
+					x[0] = igs.read_float();
+					y[0] = igs.read_float();
+					z[0] = igs.read_float();
+					c[0] = igs.read_float();
+					x[1] = igs.read_float();
+					y[1] = igs.read_float();
+					z[1] = igs.read_float();
+					c[1] = igs.read_float();
+					x[2] = igs.read_float();
+					y[2] = igs.read_float();
+					z[2] = igs.read_float();
+					c[2] = igs.read_float();
 					Crd.setAxis(x,y,z);
 					Crd.setCenter(c);
 					crdMap.insert(DE,Crd);
@@ -744,39 +740,26 @@ void readIGES(Geometry *geom,const char *name)
 					/*B-Spline curves*/
 					BSpline BS;
 
-					pnt+=igs.readDelimString(pnt,param);
-					BS.K=atoi(param);
-					pnt+=igs.readDelimString(pnt,param);
-					BS.M=atoi(param);
-					pnt+=igs.readDelimString(pnt,param);
-					pnt+=igs.readDelimString(pnt,param);
-					pnt+=igs.readDelimString(pnt,param);
-					pnt+=igs.readDelimString(pnt,param);
-					BS.T=(float*)calloc(BS.K+BS.M+2,sizeof(float));
-					BS.W=(float*)calloc(BS.K+1,sizeof(float));
-					BS.P=(float(*)[3])calloc(BS.K+1,sizeof(float[3]));
+					BS.K = igs.read_int();
+					BS.M = igs.read_int();
+
+					igs.readDelimString();
+					igs.readDelimString();
+					igs.readDelimString();
+					igs.readDelimString();
+
+					BS.resize();
 
 					int j;
-					for (j=0; j<BS.K+BS.M+2; j++) {
-						pnt+=igs.readDelimString(pnt,param);
-						BS.T[j]=myatof(param);
-					}
+					
+					igs.read_float_multi(BS.T, BS.K+BS.M+2);
+					igs.read_float_multi(BS.W,BS.K+1);
+					
 					for (j=0; j<BS.K+1; j++) {
-						pnt+=igs.readDelimString(pnt,param);
-						BS.W[j]=myatof(param);
+						igs.read_float_multi( BS.P[j] , 3);
 					}
-					for (j=0; j<BS.K+1; j++) {
-						pnt+=igs.readDelimString(pnt,param);
-						BS.P[j][0]=myatof(param);
-						pnt+=igs.readDelimString(pnt,param);
-						BS.P[j][1]=myatof(param);
-						pnt+=igs.readDelimString(pnt,param);
-						BS.P[j][2]=myatof(param);
-					}
-					pnt+=igs.readDelimString(pnt,param);
-					BS.V[0]=myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					BS.V[1]=myatof(param);
+					BS.V[0] = igs.read_float();
+					BS.V[1] = igs.read_float();
 
 					int bsid=geom->addBSpline(BS);
 					if (igesd->transMatrix!=0) {
@@ -791,58 +774,43 @@ void readIGES(Geometry *geom,const char *name)
 					/*B-Spline surfaces*/
 					BSplineSurf BSS;
 
-					pnt+=igs.readDelimString(pnt,param);
-					BSS.K1=atoi(param);
-					pnt+=igs.readDelimString(pnt,param);
-					BSS.K2=atoi(param);
-					pnt+=igs.readDelimString(pnt,param);
-					BSS.M1=atoi(param);
-					pnt+=igs.readDelimString(pnt,param);
-					BSS.M2=atoi(param);
+					BSS.K1 = igs.read_int();
+					BSS.K2 = igs.read_int();
+					BSS.M1 = igs.read_int();
+					BSS.M2 = igs.read_int();
 
-					pnt+=igs.readDelimString(pnt,param);
-					pnt+=igs.readDelimString(pnt,param);
-					pnt+=igs.readDelimString(pnt,param);
-					pnt+=igs.readDelimString(pnt,param);
-					pnt+=igs.readDelimString(pnt,param);
+					igs.readDelimString();
+					igs.readDelimString();
+					igs.readDelimString();
+					igs.readDelimString();
+					igs.readDelimString();
 
-					BSS.S=(float*)calloc(BSS.K1+BSS.M1+2,sizeof(float));
-					BSS.T=(float*)calloc(BSS.K2+BSS.M2+2,sizeof(float));
-					BSS.W=(float*)calloc((BSS.K1+1)*(BSS.K2+1),sizeof(float));
-					BSS.P=(float(*)[3])calloc((BSS.K1+1)*(BSS.K2+1),sizeof(float[3]));
+					BSS.resize();
+					
 
 					int i,j,ij;
-					for (j=0; j<BSS.K1+BSS.M1+2; j++) {
-						pnt+=igs.readDelimString(pnt,param); BSS.S[j]=myatof(param);
-					}
-					for (j=0; j<BSS.K2+BSS.M2+2; j++) {
-						pnt+=igs.readDelimString(pnt,param); BSS.T[j]=myatof(param);
-					}
+
+					igs.read_float_multi(BSS.S,BSS.K1+BSS.M1+2);
+					igs.read_float_multi(BSS.T,BSS.K2+BSS.M2+2);
+					
+					
 					for (j=0; j<BSS.K2+1; j++) {
 						for (i=0; i<BSS.K1+1; i++) {
 							ij=i+j*(BSS.K1+1);
-							pnt+=igs.readDelimString(pnt,param); BSS.W[ij]=myatof(param);
+							BSS.W[ij] = igs.read_float();
 						}
 					}
 					for (j=0; j<BSS.K2+1; j++) {
 						for (i=0; i<BSS.K1+1; i++) {
 							ij=i+j*(BSS.K1+1);
-							pnt+=igs.readDelimString(pnt,param); 
-							BSS.P[ij][0]=myatof(param);
-							pnt+=igs.readDelimString(pnt,param);
-							BSS.P[ij][1]=myatof(param);
-							pnt+=igs.readDelimString(pnt,param);
-							BSS.P[ij][2]=myatof(param);
+							igs.read_float_multi(BSS.P[ij],3);
+							
 						}
 					}
-					pnt+=igs.readDelimString(pnt,param);
-					BSS.U[0]=myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					BSS.U[1]=myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					BSS.V[0]=myatof(param);
-					pnt+=igs.readDelimString(pnt,param);
-					BSS.V[1]=myatof(param);
+					BSS.U[0] = igs.read_float();
+					BSS.U[1] = igs.read_float();
+					BSS.V[0] = igs.read_float();
+					BSS.V[1] = igs.read_float();
 
 					int bssid=geom->addBSplineSurf(BSS);
 					if (igesd->transMatrix!=0) {
@@ -862,8 +830,8 @@ void readIGES(Geometry *geom,const char *name)
 
 		igesCount++;
 
+		igs.destroyString();
 
-		free(cpnt);
 
 		if (nextParameterLine.isEmpty()) break;
 		ok=igs.readLine(fp);
@@ -1001,7 +969,7 @@ void readIGES(Geometry *geom,const char *name)
 
 	for (int i=0; i<geom->bsplines.length(); i++) {
 		BSpline & BS=geom->bsplines.at(i);
-		BS.recalcCoords(0.05);
+		BS.recalcCoords(0.05f);
 	}
 
 	for (int i=0; i<geom->bsplinesurfs.length(); i++) {
@@ -1011,12 +979,12 @@ void readIGES(Geometry *geom,const char *name)
 
 	for (int i=0; i<geom->arcellipses.length(); i++) {
 		ArcEllipse &AE = geom->arcellipses.at(i);
-		AE.recalcCoords(0.05);
+		AE.recalcCoords(0.05f);
 	}
 
 	for (int i=0; i<geom->archyperbolas.length(); i++) {
 		ArcHyperbola &AH = geom->archyperbolas.at(i);
-		AH.recalcCoords(0.05);
+		AH.recalcCoords(0.05f);
 	}
 
 	for (int i=0; i<geom->revolvelines.length(); i++) {

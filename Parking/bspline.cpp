@@ -20,16 +20,27 @@ BSpline::BSpline()
 	strip=0;
 }
 
+void BSpline::resize()
+{
+	free(T);
+	free(W);
+	free(P);
+
+	T=(float*)calloc((K+M+2),sizeof(float));
+	W=(float*)calloc((K+1),sizeof(float));
+	P=(float(*)[3])calloc((K+1),sizeof(float[3]));
+
+}
+
 BSpline & BSpline::operator = (const BSpline &r)
 {
 	K=r.K;
 	M=r.M;
 
-	T=(float*)malloc((K+M+2)*sizeof(float));
+	resize();
+
 	memcpy(T,r.T,(K+M+2)*sizeof(float));
-	W=(float*)malloc((K+1)*sizeof(float));
 	memcpy(W,r.W,(K+1)*sizeof(float));
-	P=(float(*)[3])malloc((K+1)*sizeof(float[3]));
 	memcpy(P,r.P,(K+1)*sizeof(float[3]));
 	memcpy(V,r.V,sizeof(r.V));
 
@@ -41,6 +52,8 @@ BSpline & BSpline::operator = (const BSpline &r)
 
 }
 
+
+
 BSpline::~BSpline()
 {
 	free(T);
@@ -49,6 +62,8 @@ BSpline::~BSpline()
 	free(coords);
 	free(strip);
 }
+
+
 
 int BSpline::getParamPoint(float t,float outp[3]) const
 {
@@ -162,6 +177,18 @@ BSplineSurf::BSplineSurf()
 
 }
 
+void BSplineSurf::resize()
+{
+	free(S);
+	free(T);
+	free(W);
+	free(P);
+	S=(float*)calloc((K1+M1+2),sizeof(float));
+	T=(float*)calloc((K2+M2+2),sizeof(float));
+	W=(float*)calloc((K1+1)*(K2+1),sizeof(float));
+    P=(float(*)[3])calloc((K1+1)*(K2+1),sizeof(float[3]));
+            
+}
 
 BSplineSurf & BSplineSurf::operator = (const BSplineSurf &r)
 {
@@ -170,20 +197,14 @@ BSplineSurf & BSplineSurf::operator = (const BSplineSurf &r)
         M1=r.M1;
 	M2=r.M2;
 
+	resize();
 
-	S=(float*)malloc((K1+M1+2)*sizeof(float));
 	memcpy(S,r.S,(K1+M1+2)*sizeof(float));
-        T=(float*)malloc((K2+M2+2)*sizeof(float));
-        memcpy(T,r.T,(K2+M2+2)*sizeof(float));
-
-        W=(float*)malloc((K1+1)*(K2+1)*sizeof(float));
-        memcpy(W,r.W,(K1+1)*(K2+1)*sizeof(float));
-
-        P=(float(*)[3])malloc((K1+1)*(K2+1)*sizeof(float[3]));
-        memcpy(P,r.P,(K1+1)*(K2+1)*sizeof(float[3]));
-
+    memcpy(T,r.T,(K2+M2+2)*sizeof(float));
+	memcpy(W,r.W,(K1+1)*(K2+1)*sizeof(float));
+	memcpy(P,r.P,(K1+1)*(K2+1)*sizeof(float[3]));
 	memcpy(U,r.U,sizeof(r.U));
-        memcpy(V,r.V,sizeof(r.V));
+	memcpy(V,r.V,sizeof(r.V));
 
 	total_coords=0;
 	coords=0;

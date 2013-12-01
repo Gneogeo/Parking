@@ -7,6 +7,8 @@ public:
 	BSpline & operator = (const BSpline &r);
 	~BSpline();
 
+	void resize();
+
 	int K;
 	int M; /* N=1+K-M */
 	float *T; /* -M:1+K */
@@ -31,6 +33,8 @@ public:
 	BSplineSurf();
 	BSplineSurf & operator = (const BSplineSurf &r);
 	~BSplineSurf();
+
+	void resize();
 
 	int K1;
 	int K2;

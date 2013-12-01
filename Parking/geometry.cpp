@@ -576,7 +576,7 @@ void Geometry::loadSTL(char *name)
 
 	calcTrianglesNormals();
 
-	recalcEdge(30*3.14159/180.);
+	recalcEdge((float)30*3.14159/180.);
 
 	makeEdgeStrip();
 	makeLineStrip();
@@ -1245,7 +1245,7 @@ void Geometry::drawArcHyperbolas()
 	glColor4fv(lineStripColor);
 	int i,j;
 	float t;
-	float dt=0.05;
+	float dt=0.05f;
 	float X[3];
 	for (i=0; i<archyperbolas.length(); i++) {
 		const ArcHyperbola & AH=archyperbolas.at(i);
