@@ -661,6 +661,7 @@ void GLWidget::paintGL()
 		geom->drawSplines();
 		geom->drawBSplines();
 		geom->drawArcEllipses();
+		geom->drawArcHyperbolas();
 
 
 		glPointSize(4);

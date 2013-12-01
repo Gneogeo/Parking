@@ -269,16 +269,13 @@ void readIGES(Geometry *geom,const char *name)
 	QMap<int,int> bsplineCoordMap;
 	QMap<int,int> bsplineSurfCoordMap;
 	QMap<int,int> arcEllipseCoordMap;
+	QMap<int,int> arcHyperbolaCoordMap;
 
 	QMap<int,int> lineMap;
 
 
-	
-	
+	for (;;) {
 
-
-	while (ok) {
-		if (igs.letterCode!='P') break;
 
 		int DE=2*igesCount+1;
 		int paramId;
@@ -412,32 +409,40 @@ void readIGES(Geometry *geom,const char *name)
 					CS1.setAxis(cX,cY,cZ);
 
 					
+					float xstart[3],xstop[3];
+					xstart[0]=x1; xstart[1]=y1; xstart[2]=zt;
+					xstop[0]=x2; xstop[1]=y2; xstop[2]=zt;
+			
+					float Z0[2];
+					float D[2];
+					float E;
+					multiply_122(D,B,P);
+					Z0[0]=-0.5*D[0]/L[0][0];
+					Z0[1]=-0.5*D[1]/L[1][1];
+					E = -0.5*(D[0]*Z0[0]+D[1]*Z0[1])-C;
+
+					float R1,R2;
+
+					CoordinateSystem<float> CS2;
+					cC[0]=Z0[0]; cC[1]=Z0[1]; cC[2]=0;
+					CS2.setCenter(cC);
+
+					CS1.fromLocalToGlobal(&CS2);
+					CS0.fromLocalToGlobal(&CS2);
 
 
+					float Z1[3],Z2[3];
+					CS2.fromGlobalToLocal(Z1,xstart);
+					CS2.fromGlobalToLocal(Z2,xstop);
 
 					if (Q2>0) {
-						float Z0[2];
-						float D[2];
-						float E;
-						multiply_122(D,B,P);
-						Z0[0]=-0.5*D[0]/L[0][0];
-						Z0[1]=-0.5*D[1]/L[1][1];
-						E = -0.5*(D[0]*Z0[0]+D[1]*Z0[1])-C;
-
-						float R1,R2;
 						R1=sqrt(E/L[0][0]);
 						R2=sqrt(E/L[1][1]);
 
-						CoordinateSystem<float> CS2;
-						cC[0]=Z0[0]; cC[1]=Z0[1]; cC[2]=0;
-						CS2.setCenter(cC);
-
-						CS1.fromLocalToGlobal(&CS2);
-						CS0.fromLocalToGlobal(&CS2);
-
 						ArcEllipse AE;
-						AE.fmin=0;
-						AE.fmax=6.28;
+						AE.fmin=atan2(Z1[1]/R2,Z1[0]/R1);
+						AE.fmax=atan2(Z2[1]/R2,Z2[0]/R1);
+						if (AE.fmax<=AE.fmin) AE.fmax+=2*M_PI;
 						AE.xradius=R1;
 						AE.yradius=R2;
 						AE.XYZ=CS2;
@@ -447,12 +452,22 @@ void readIGES(Geometry *geom,const char *name)
 							arcEllipseCoordMap.insert(aeid,igesd->transMatrix);
 						}
 
-
-
-					
-
 					} else if (Q2<0) {
-						/*Hyperbola*/
+						R1=sqrt(E/L[0][0]);
+						R2=sqrt(-E/L[1][1]);
+
+						ArcHyperbola AH;
+						AH.fmin=atan2((R1/Z1[0])*(Z1[1]/R2),R1/Z1[0]);
+						AH.fmax=atan2((R1/Z2[0])*(Z2[1]/R2),R1/Z2[0]);
+						if (AH.fmax<=AH.fmin) AH.fmax+=2*M_PI;
+						AH.xradius=R1;
+						AH.yradius=R2;
+						AH.XYZ=CS2;
+
+						int aeid=geom->addArcHyperbola(AH);
+						if (igesd->transMatrix!=0) {
+							arcHyperbolaCoordMap.insert(aeid,igesd->transMatrix);
+						}
 					} else if (Q2==0) {
 						/*Parabola*/
 					}
@@ -850,6 +865,7 @@ void readIGES(Geometry *geom,const char *name)
 
 		free(cpnt);
 
+		if (nextParameterLine.isEmpty()) break;
 		ok=igs.readLine(fp);
 	}
 
@@ -969,6 +985,20 @@ void readIGES(Geometry *geom,const char *name)
 		}
 	}
 
+	for (it=arcHyperbolaCoordMap.begin(); it!=arcHyperbolaCoordMap.end(); ++it) {
+		int c1_id,c2_id;
+		c1_id=it.key();
+		c2_id=it.value();
+
+		ArcHyperbola *T=&geom->archyperbolas.at( it.key() );
+
+		if (crdMap.find(c2_id)!=crdMap.end()) {
+			CoordinateSystem<float> c=crdMap.find(c2_id).value();
+
+			c.fromLocalToGlobal(&T->XYZ);
+		}
+	}
+
 	for (int i=0; i<geom->bsplines.length(); i++) {
 		BSpline & BS=geom->bsplines.at(i);
 		BS.recalcCoords(0.05);
@@ -982,6 +1012,11 @@ void readIGES(Geometry *geom,const char *name)
 	for (int i=0; i<geom->arcellipses.length(); i++) {
 		ArcEllipse &AE = geom->arcellipses.at(i);
 		AE.recalcCoords(0.05);
+	}
+
+	for (int i=0; i<geom->archyperbolas.length(); i++) {
+		ArcHyperbola &AH = geom->archyperbolas.at(i);
+		AH.recalcCoords(0.05);
 	}
 
 	for (int i=0; i<geom->revolvelines.length(); i++) {
