@@ -71,25 +71,17 @@ void parking::exit()
 	QApplication::exit(0);
 }
 
-static QFileDialog *fileSelect;
 
 QString selectOpenFileName(const QString &filter)
 {
+	static QDir *currentDir;
 
-	if (!fileSelect) {
-		fileSelect=new QFileDialog(form,QString::fromLocal8Bit("Open File..."),QString::fromLocal8Bit(""));
+	if (!currentDir) {
+		currentDir = new QDir(QDir::home());
 	}
-
-	fileSelect->setFilter(filter);
-
-	QString file=QString::fromLocal8Bit("");
-	if (fileSelect->exec()==QDialog::Accepted) {
-		QStringList fileList;
-		fileList=fileSelect->selectedFiles();
-
-		if (fileList.size()>0) {
-			file=fileList.at(0);
-		}
+	QString file = QFileDialog::getOpenFileName(form, QString::fromLocal8Bit("Open File..."),currentDir->absolutePath(),filter);
+	if (!file.isEmpty()) {
+		currentDir->setCurrent(file);
 	}
 	return file;
 }
@@ -107,6 +99,7 @@ void parking::loadSTL()
 		Widget->geom->loadSTL(file.toLocal8Bit().data());
 		bsplinesurf->refreshFromGeometry(Widget->geom);
 	}
+	Widget->updateGL();
 }
 
 void parking::loadOBJ()
@@ -122,7 +115,8 @@ void parking::loadOBJ()
 		Widget->geom->loadOBJ(file.toLocal8Bit().data());
 		bsplinesurf->refreshFromGeometry(Widget->geom);
 	}
-}
+	Widget->updateGL();
+} 
 
 void parking::loadDXF()
 {
@@ -137,6 +131,7 @@ void parking::loadDXF()
 		Widget->geom->loadDXF(file.toLocal8Bit().data());
 		bsplinesurf->refreshFromGeometry(Widget->geom);
 	}
+	Widget->updateGL();
 }
 
 void parking::load3DS()
@@ -152,6 +147,7 @@ void parking::load3DS()
 		Widget->geom->load3DS(file.toLocal8Bit().data());
 		bsplinesurf->refreshFromGeometry(Widget->geom);
 	}
+	Widget->updateGL();
 }
 
 
@@ -168,6 +164,7 @@ void parking::loadIGES()
 		Widget->geom->loadIGES(file.toLocal8Bit().data());
 		bsplinesurf->refreshFromGeometry(Widget->geom);
 	}
+	Widget->updateGL();
 }
 
 

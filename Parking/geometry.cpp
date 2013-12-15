@@ -72,7 +72,7 @@ int Geometry::addGrid(float x,float y,float z)
 		if (minn[1]>y) minn[1]=y;
 		if (minn[2]>z) minn[2]=z;
 		if (maxx[0]<x) maxx[0]=x;
-		if (maxx[1]<y) maxx[1]=y;
+		if (maxx[1]<y) maxx[1]=y; 
 		if (maxx[2]<z) maxx[2]=z;
 	}
 	return grids.length()-1;
@@ -589,12 +589,12 @@ void Geometry::loadOBJ(char *name)
 	readOBJ(this,name);
 
 	//compressGrids();
-	//recalcEdge((float)30*3.14159/180.);
-
 	calcTrianglesNormals();
 
-	//makeEdgeStrip();
-	//makeLineStrip();
+	recalcEdge((float)30*3.14159/180.);
+
+	makeEdgeStrip();
+	makeLineStrip();
 	makeTriaStrip();
 }
 
@@ -650,6 +650,96 @@ void Geometry::loadIGES(char *name)
 
 }
 
+	
+
+
+
+static int *createEdgeStrip(int **edgesOnGrid,int *totalEdgesOnGrid,int grids_len)
+{
+	int *edgeStrip;
+	int edgeStripLen,edgeStripMem;
+	edgeStripMem=1024;
+	edgeStripLen=0;
+	edgeStrip=(int *)malloc(edgeStripMem*sizeof(int));
+
+	int k0;
+	k0=0;
+	
+
+	for (;;) {
+		while (k0<grids_len && totalEdgesOnGrid[k0]==0) {
+			k0++;
+		}
+		if (k0==grids_len) break;
+
+		int ARR[200];
+		int arr_pos;
+		int k,k1;
+
+		k=k0;
+		
+		arr_pos=0;
+
+
+		ARR[arr_pos]=k;
+		arr_pos++;
+
+		while (arr_pos<150) {
+				totalEdgesOnGrid[k]--;
+				k1=edgesOnGrid[k][totalEdgesOnGrid[k]];
+			
+				int fnd=0;
+			
+				for (int k2=0; k2<totalEdgesOnGrid[k1]; k2++) {
+					if (!fnd) {
+						if (edgesOnGrid[k1][k2]==k) fnd=1;
+					} else {
+						edgesOnGrid[k1][k2-1]=edgesOnGrid[k1][k2];
+					}
+				}
+				totalEdgesOnGrid[k1]--;
+
+				k=k1;
+
+				ARR[arr_pos]=k;
+				arr_pos++;
+
+				if (totalEdgesOnGrid[k]==0) {
+					break;
+				}
+			}
+
+		int fnd=0;
+		while (edgeStripMem<edgeStripLen+arr_pos+1) {
+			edgeStripMem*=2;
+			fnd=1;
+		}
+		if (fnd) {
+			edgeStrip=(int *)realloc(edgeStrip,edgeStripMem*sizeof(int));
+		}
+
+		edgeStrip[edgeStripLen]=arr_pos;
+		edgeStripLen++;
+
+		for (int k=0; k<arr_pos; k++) {
+			edgeStrip[edgeStripLen]=ARR[k];
+			edgeStripLen++;
+		}
+	}
+	if (edgeStripMem ==edgeStripLen) {
+		edgeStripMem+=1;
+		edgeStrip=(int *)realloc(edgeStrip,edgeStripMem*sizeof(int));
+	}
+	edgeStrip[edgeStripLen]=0;
+	edgeStripLen++;
+
+	return edgeStrip;
+}
+
+
+
+
+
 
 void Geometry::makeEdgeStrip()
 {
@@ -658,7 +748,7 @@ void Geometry::makeEdgeStrip()
 
 	clock_t t=clock();
 
-	int k,k1,k2;
+	int k;
 	int *totalEdgesOnGrid=(int *)calloc(grids.length(),sizeof(int));
 	for (k=0; k<edges.length(); k++) {
 		totalEdgesOnGrid[edges.at(k).node[0]]++;
@@ -676,7 +766,7 @@ void Geometry::makeEdgeStrip()
 	}	
 	totalEdgesOnGrid[grids.length()-1]=0;
 
-	int edj1,edj2,fnd;
+	int edj1,edj2;
 
 	for (k=0; k<edges.length(); k++) {
 		edj1=edges.at(k).node[0];
@@ -689,81 +779,10 @@ void Geometry::makeEdgeStrip()
 		
 	}
 
-	int ARR[200];
-	int arr_pos;
-	k=0;
-
+	
 	free(edgeStrip);
-	int edgeStripLen,edgeStripMem;
-	edgeStripMem=1024;
-	edgeStripLen=0;
-	edgeStrip=(int *)malloc(edgeStripMem*sizeof(int));
-
-	int k0;
-	k0=0;
-	for (;;) {
-		while (k0<grids.length() && totalEdgesOnGrid[k0]==0) {
-			k0++;
-		}
-		if (k0==grids.length()) break;
-
-		k=k0;
-		
-		arr_pos=0;
-
-		ARR[arr_pos]=k;
-		arr_pos++;
-
-		
-
-		while (arr_pos<150) {
-			totalEdgesOnGrid[k]--;
-			k1=edgesOnGrid[k][totalEdgesOnGrid[k]];
-			
-			int fnd=0;
-			
-			for (k2=0; k2<totalEdgesOnGrid[k1]; k2++) {
-				if (!fnd) {
-					if (edgesOnGrid[k1][k2]==k) fnd=1;
-				} else {
-					edgesOnGrid[k1][k2-1]=edgesOnGrid[k1][k2];
-				}
-			}
-			totalEdgesOnGrid[k1]--;
-
-			k=k1;
-
-			ARR[arr_pos]=k;
-			arr_pos++;
-
-			if (totalEdgesOnGrid[k]==0) {
-				break;
-			}
-		}
-		fnd=0;
-		while (edgeStripMem<edgeStripLen+arr_pos+1) {
-			edgeStripMem*=2;
-			fnd=1;
-		}
-		if (fnd) {
-			edgeStrip=(int *)realloc(edgeStrip,edgeStripMem*sizeof(int));
-		}
-
-		edgeStrip[edgeStripLen]=arr_pos;
-		edgeStripLen++;
-
-		for (k=0; k<arr_pos; k++) {
-			edgeStrip[edgeStripLen]=ARR[k];
-			edgeStripLen++;
-		}
-
-	}
-	if (edgeStripMem==edgeStripLen) {
-		edgeStripMem+=1;
-		edgeStrip=(int *)realloc(edgeStrip,edgeStripMem*sizeof(int));
-	}
-	edgeStrip[edgeStripLen]=0;
-	edgeStripLen++;
+	edgeStrip = createEdgeStrip(edgesOnGrid,totalEdgesOnGrid,grids.length());
+	
 	
 	free(totalEdgesOnGrid);
 	free(edgesOnGrid);
@@ -781,7 +800,7 @@ void Geometry::makeLineStrip()
 
 	clock_t t=clock();
 
-	int k,k1,k2;
+	int k;
 	int *totalLinesOnGrid=(int *)calloc(grids.length(),sizeof(int));
 	for (k=0; k<lines.length(); k++) {
 		totalLinesOnGrid[lines.at(k).node[0]]++;
@@ -799,7 +818,7 @@ void Geometry::makeLineStrip()
 	}	
 	totalLinesOnGrid[grids.length()-1]=0;
 
-	int edj1,edj2,fnd;
+	int edj1,edj2;
 
 	for (k=0; k<lines.length(); k++) {
 		edj1=lines.at(k).node[0];
@@ -812,81 +831,11 @@ void Geometry::makeLineStrip()
 		
 	}
 
-	int ARR[200];
-	int arr_pos;
-	k=0;
-
+	
 	free(lineStrip);
-	int lineStripLen,lineStripMem;
-	lineStripMem=1024;
-	lineStripLen=0;
-	lineStrip=(int *)malloc(lineStripMem*sizeof(int));
+	
+	lineStrip = createEdgeStrip(linesOnGrid,totalLinesOnGrid,grids.length());
 
-	int k0;
-	k0=0;
-	for (;;) {
-		while (k0<grids.length() && totalLinesOnGrid[k0]==0) {
-			k0++;
-		}
-		if (k0==grids.length()) break;
-
-		k=k0;
-		
-		arr_pos=0;
-
-		ARR[arr_pos]=k;
-		arr_pos++;
-
-		
-
-		while (arr_pos<150) {
-			totalLinesOnGrid[k]--;
-			k1=linesOnGrid[k][totalLinesOnGrid[k]];
-			
-			int fnd=0;
-			
-			for (k2=0; k2<totalLinesOnGrid[k1]; k2++) {
-				if (!fnd) {
-					if (linesOnGrid[k1][k2]==k) fnd=1;
-				} else {
-					linesOnGrid[k1][k2-1]=linesOnGrid[k1][k2];
-				}
-			}
-			totalLinesOnGrid[k1]--;
-
-			k=k1;
-
-			ARR[arr_pos]=k;
-			arr_pos++;
-
-			if (totalLinesOnGrid[k]==0) {
-				break;
-			}
-		}
-		fnd=0;
-		while (lineStripMem<lineStripLen+arr_pos+1) {
-			lineStripMem*=2;
-			fnd=1;
-		}
-		if (fnd) {
-			lineStrip=(int *)realloc(lineStrip,lineStripMem*sizeof(int));
-		}
-
-		lineStrip[lineStripLen]=arr_pos;
-		lineStripLen++;
-
-		for (k=0; k<arr_pos; k++) {
-			lineStrip[lineStripLen]=ARR[k];
-			lineStripLen++;
-		}
-
-	}
-	if (lineStripMem==lineStripLen) {
-		lineStripMem+=1;
-		lineStrip=(int *)realloc(lineStrip,lineStripMem*sizeof(int));
-	}
-	lineStrip[lineStripLen]=0;
-	lineStripLen++;
 	
 	free(totalLinesOnGrid);
 	free(linesOnGrid);
