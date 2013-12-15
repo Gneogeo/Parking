@@ -115,6 +115,7 @@ public:
 
 
 	void loadSTL(char *name);
+	void loadOBJ(char *name);
 	void loadDXF(char *name);
 	void load3DS(char *name);
 	void loadIGES(char *name);

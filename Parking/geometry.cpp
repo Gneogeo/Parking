@@ -1,6 +1,7 @@
 #include "geometry.h"
 #include "stdlib.h"
 #include "stl_reader.h"
+#include "obj_reader.h"
 #include "dxf_reader.h"
 #include "chunck3ds_reader.h"
 #include "iges_reader.h"
@@ -583,6 +584,19 @@ void Geometry::loadSTL(char *name)
 	makeTriaStrip();
 }
 
+void Geometry::loadOBJ(char *name)
+{
+	readOBJ(this,name);
+
+	//compressGrids();
+	//recalcEdge((float)30*3.14159/180.);
+
+	calcTrianglesNormals();
+
+	//makeEdgeStrip();
+	//makeLineStrip();
+	makeTriaStrip();
+}
 
 
 void Geometry::loadDXF(char *name)

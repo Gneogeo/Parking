@@ -40,6 +40,7 @@ parking::parking(QWidget *parent, Qt::WFlags flags)
 
 	
 	connect(ui.action_LoadSTL,SIGNAL(triggered()),this,SLOT(loadSTL()));
+	connect(ui.action_LoadOBJ,SIGNAL(triggered()),this,SLOT(loadOBJ()));
 	connect(ui.action_LoadDXF,SIGNAL(triggered()),this,SLOT(loadDXF()));
 	connect(ui.action_Load3DS,SIGNAL(triggered()),this,SLOT(load3DS()));
 	connect(ui.action_LoadIGES,SIGNAL(triggered()),this,SLOT(loadIGES()));
@@ -74,6 +75,7 @@ static QFileDialog *fileSelect;
 
 QString selectOpenFileName(const QString &filter)
 {
+
 	if (!fileSelect) {
 		fileSelect=new QFileDialog(form,QString::fromLocal8Bit("Open File..."),QString::fromLocal8Bit(""));
 	}
@@ -103,6 +105,21 @@ void parking::loadSTL()
 		Widget->geom=new Geometry;
 
 		Widget->geom->loadSTL(file.toLocal8Bit().data());
+		bsplinesurf->refreshFromGeometry(Widget->geom);
+	}
+}
+
+void parking::loadOBJ()
+{
+	QString file=selectOpenFileName(QString::fromLocal8Bit("OBJ Files (*.obj)"));
+
+	if (!file.isEmpty()) {
+		if (!Widget->geom) {
+			delete Widget->geom;
+		}
+		Widget->geom=new Geometry;
+
+		Widget->geom->loadOBJ(file.toLocal8Bit().data());
 		bsplinesurf->refreshFromGeometry(Widget->geom);
 	}
 }

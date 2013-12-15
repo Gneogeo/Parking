@@ -29,6 +29,7 @@ public:
 
 	public slots:
 		void loadSTL();
+		void loadOBJ();
 		void loadDXF();
 		void load3DS();
 		void loadIGES();

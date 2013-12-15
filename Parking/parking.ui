@@ -21,7 +21,7 @@
      <x>0</x>
      <y>0</y>
      <width>660</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuHello">
@@ -29,6 +29,7 @@
      <string>File</string>
     </property>
     <addaction name="action_LoadSTL"/>
+    <addaction name="action_LoadOBJ"/>
     <addaction name="action_LoadDXF"/>
     <addaction name="action_Load3DS"/>
     <addaction name="action_LoadIGES"/>
@@ -77,6 +78,11 @@
   <action name="actionExit">
    <property name="text">
     <string>Exit</string>
+   </property>
+  </action>
+  <action name="action_LoadOBJ">
+   <property name="text">
+    <string>Load OBJ</string>
    </property>
   </action>
  </widget>
