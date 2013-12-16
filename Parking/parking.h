@@ -7,6 +7,7 @@
 class Geometry;
 class GLWidget;
 
+class Q_Geometries;
 class Q_BSplineSurf;
 
 class parking : public QMainWindow
@@ -17,6 +18,7 @@ public:
 	parking(QWidget *parent = 0, Qt::WFlags flags = 0);
 	~parking();
 
+	Q_Geometries *geometries;
 	Q_BSplineSurf *bsplinesurf;
 
 	GLWidget *Widget;
@@ -33,10 +35,15 @@ public:
 		void loadDXF();
 		void load3DS();
 		void loadIGES();
+
+		void showGeometries();
+
 		void fixView_clicked();
 		void orthoView_XY_clicked();
 		void orthoView_YZ_clicked();
 		void orthoView_ZX_clicked();
+
+
 
 		void exit();
 

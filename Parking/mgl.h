@@ -2,6 +2,7 @@
 #define MGL_H
 
 #include <QGLWidget>
+#include <QVector>
 
 class Geometry;
 
@@ -15,7 +16,8 @@ public:
 	QSize minimumSizeHint() const;
 	QSize sizeHint() const;
 
-	Geometry *geom; 
+	QVector<Geometry *>geomlist;
+	
 	int pickGrid(int x1,int y1,int x2,int y2);
 
 	void fixView();

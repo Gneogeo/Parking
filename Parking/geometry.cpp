@@ -24,7 +24,7 @@ using namespace std;
 Geometry::Geometry()
 {
 	hasSmoothNormals=0;
-	 
+	visible = 1;
 	pickedGrid=-1;
 
 	edgeStrip=NULL;
@@ -311,9 +311,8 @@ void Geometry::calcTrianglesSmoothNormals()
 
 void Geometry::translateGeometry(float mat[4][4])
 {
-	int k;
 	float v[3],*v1;
-	for (k=0; k<grids.length(); k++) {
+	for (unsigned int k=0; k<grids.length(); k++) {
                 v1=grids.at(k).coords;
 		v[0]=mat[0][0]*v1[0]+mat[0][1]*v1[1]+mat[0][2]*v1[2]+mat[0][3];
 		v[1]=mat[1][0]*v1[0]+mat[1][1]*v1[1]+mat[1][2]*v1[2]+mat[1][3];
@@ -346,13 +345,12 @@ void Geometry::recalcEdge(float angle)
 	float cf=cos(angle);
 
 	/*Edge calculation*/
-	int k;
-
+	
 	int edge_len=3*triangles.length();
 	Edge *edge=(Edge *)malloc(edge_len*sizeof(Edge));
 	edge_len=0;
 
-	for (k=0; k<triangles.length(); k++) {
+	for (unsigned int k=0; k<triangles.length(); k++) {
                 edge[edge_len].nod[0]=triangles.at(k).node[0];
                 edge[edge_len].nod[1]=triangles.at(k).node[1];
 		edge[edge_len].elem[0]=k;
@@ -375,7 +373,7 @@ void Geometry::recalcEdge(float angle)
 
 	if (edge_len) {
 
-		for (k=0; k<edge_len; k++) {
+		for (int k=0; k<edge_len; k++) {
 			if (edge[k].nod[0]>edge[k].nod[1]) {
 				rp=edge[k].nod[0];
 				edge[k].nod[0]=edge[k].nod[1];
@@ -385,7 +383,7 @@ void Geometry::recalcEdge(float angle)
 
 		qsort(edge,edge_len,sizeof(Edge),compareEdge);
 		rp=0;
-		for (k=1; k<edge_len; k++) {
+		for (int k=1; k<edge_len; k++) {
 			if (edge[k].nod[0]==edge[rp].nod[0] &&
 				edge[k].nod[1]==edge[rp].nod[1]) {
 					edge[rp].elem[1]=edge[k].elem[0];
@@ -401,7 +399,7 @@ void Geometry::recalcEdge(float angle)
 		edge_len=rp+1;
 		float *nrm1,*nrm2;
 		float cosf;
-		for (k=0; k<edge_len; k++) {
+		for (int k=0; k<edge_len; k++) {
 			if (edge[k].elem[0]!=-1 && edge[k].elem[1]!=-1) {
 
 
@@ -457,7 +455,6 @@ static int compareGrids1(const Grid *f1,const Grid *f2)
 
 void Geometry::shrinkGeometry()
 {
-	int k;
 	/*Must move whole model into [-5,0,0],[5,10,5]*/
 	float r1=maxx[0]-minn[0];
 	float r2=maxx[1]-minn[1];
@@ -468,7 +465,7 @@ void Geometry::shrinkGeometry()
 	if (r2<r) r=r2;
 	if (r3<r) r=r3;
 
-	for (k=0; k<grids.length(); k++) {
+	for (unsigned int k=0; k<grids.length(); k++) {
                 grids.at(k).coords[0]-=(minn[0]+maxx[0])*.5;
                 grids.at(k).coords[1]-=(minn[1]+maxx[1])*.5;
                 grids.at(k).coords[2]-=(minn[2]+maxx[2])*.5;

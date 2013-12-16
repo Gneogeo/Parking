@@ -13,6 +13,8 @@
 
 #include "myvector.h"
 
+#include <QString>
+
 class Grid {
 public:
 	int pos;
@@ -32,6 +34,7 @@ public:
 	vector3d<float> normal;
 	vector3d<float> cnormal[3];
 };
+
 
 class Circle {
 public:
@@ -89,6 +92,8 @@ public:
 	float minn[3],maxx[3];
 
 	int hasSmoothNormals;
+	int visible;
+	QString name;
 
 	Geometry();
 	~Geometry();

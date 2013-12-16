@@ -137,5 +137,5 @@ void readOBJ(Geometry *geom,const char *name)
 
 	fclose(fp);
 
-	qDebug("Time to read OBJ: %f msec",(clock()-t)/(CLOCKS_PER_SEC/1000.));
+	qDebug("Time to read %s OBJ: %f msec",name,(clock()-t)/(CLOCKS_PER_SEC/1000.));
 }

@@ -14,7 +14,7 @@
 
 
 float viewF=10;
-const float pi=3.141593;
+const float pi=3.141593f;
 
 
 GLWidget::GLWidget(QWidget *parent)
@@ -24,12 +24,14 @@ GLWidget::GLWidget(QWidget *parent)
      yRot = 0;
      zRot = 0;
 	 zoom=4;
-	 geom=0;
 }
 
 
 GLWidget::~GLWidget()
 {
+	for (int i=0; i<geomlist.count(); i++) {
+		delete geomlist.at(i);
+	}
 
 }
 
@@ -48,12 +50,12 @@ QSize GLWidget::sizeHint() const
 
 void GLWidget::initializeGL()
 {
-	GLfloat no_mat[] = { 0.0, 0.0, 0.0, 1.0 };
-	GLfloat mat_ambient[] = { 0.7, 0.7, 0.7, 1.0 };
-	GLfloat mat_ambient_color[] = { 0.8, 0.8, 0.2, 1.0 };
-	GLfloat mat_diffuse[] = { 0.1, 0.5, 0.8, 1.0 };
-	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-	GLfloat mat_shininess[] = {30.0};
+	GLfloat no_mat[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	GLfloat mat_ambient[] = { 0.7f, 0.7f, 0.7f, 1.0f };
+	GLfloat mat_ambient_color[] = { 0.8f, 0.8f, 0.2f, 1.0f };
+	GLfloat mat_diffuse[] = { 0.1f, 0.5f, 0.8f, 1.0f };
+	GLfloat mat_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	GLfloat mat_shininess[] = {30.0f};
 	GLfloat light_position[] = { 0, 0, 1, 0 };
 	glClearColor(1,1,1,1);
 	glShadeModel(GL_FLAT);
@@ -109,15 +111,18 @@ void GLWidget::resizeGL(int width, int height)
 	float lim2=zoom*height/(float)side;
 
 	float maxdepth=20;
-	if (geom) {
+	for (int i=0; i<geomlist.count(); i++) {
+		Geometry *geom = geomlist.at(i);
+		if (geom->visible) {
 
-		if (maxdepth<-geom->minn[0]) maxdepth=-geom->minn[0];
-		if (maxdepth<-geom->minn[1]) maxdepth=-geom->minn[1];
-		if (maxdepth<-geom->minn[2]) maxdepth=-geom->minn[2];
+			if (maxdepth<-geom->minn[0]) maxdepth=-geom->minn[0];
+			if (maxdepth<-geom->minn[1]) maxdepth=-geom->minn[1];
+			if (maxdepth<-geom->minn[2]) maxdepth=-geom->minn[2];
 
-		if (maxdepth<geom->maxx[0]) maxdepth=geom->maxx[0];
-		if (maxdepth<geom->maxx[1]) maxdepth=geom->maxx[1];
-		if (maxdepth<geom->maxx[2]) maxdepth=geom->maxx[2];
+			if (maxdepth<geom->maxx[0]) maxdepth=geom->maxx[0];
+			if (maxdepth<geom->maxx[1]) maxdepth=geom->maxx[1];
+			if (maxdepth<geom->maxx[2]) maxdepth=geom->maxx[2];
+		}
 	}
 	
 
@@ -136,6 +141,8 @@ void GLWidget::mousePressEvent(QMouseEvent *event)
 	lastClickPos = event->pos();
 	lastMovePos = event->pos();
 	if (event->modifiers() & Qt::ShiftModifier) {
+#if 0
+		/*TODO*/
 		int i;
 		int x=lastClickPos.x();
 		int y=lastClickPos.y();
@@ -143,6 +150,7 @@ void GLWidget::mousePressEvent(QMouseEvent *event)
 		qDebug("%d",i);
 		if (geom) geom->pickedGrid=i;
 		updateGL();
+#endif
 	}
 }
 
@@ -216,8 +224,7 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
 
 void GLWidget::fixView()
 {
-	if (!geom) return;
-
+	
 	QSize size=this->size();
 	float width=size.width();
 	float height=size.height();
@@ -226,18 +233,19 @@ void GLWidget::fixView()
 	glMatrixMode (GL_MODELVIEW);	
 	glGetFloatv(GL_MODELVIEW_MATRIX,pmat);
 
-	if (geom->grids.length()) {
-                unsigned int i,j;
-		float xmin,xmax,ymin,ymax,zmin,zmax;
-		xmin=FLT_MAX;
-		xmax=-FLT_MAX;
-		ymin=FLT_MAX;
-		ymax=-FLT_MAX;
-		zmin=FLT_MAX;
-		zmax=-FLT_MAX;
+    unsigned int i,j;
+	float xmin,xmax,ymin,ymax,zmin,zmax;
+	xmin=FLT_MAX;
+	xmax=-FLT_MAX;
+	ymin=FLT_MAX;
+	ymax=-FLT_MAX;
+	zmin=FLT_MAX;
+	zmax=-FLT_MAX;
 
-		int first=1;
+	int first=1;
 		
+	for (int k0=0; k0<geomlist.count(); k0++) {
+		Geometry *geom = geomlist.at(k0);
 		for (i=0; i<geom->grids.length(); i++) {
 			float *pvec,vec[3];
 			pvec=geom->grids.at(i).coords;
@@ -290,23 +298,24 @@ void GLWidget::fixView()
 				zmax = vec[2]>zmax ? vec[2] : zmax;
 			}
 		}
-		if (xmin>xmax) xmin=xmax=0;
-		if (ymin>ymax) ymin=ymax=0;
-
-		float cx=(xmin+xmax)*0.5;
-		float cy=(ymin+ymax)*0.5;
-		float cz=(zmin+zmax)*0.5;
-		float dx=(xmax-xmin)*0.5;
-		float dy=(ymax-ymin)*0.5;
-		pmat[12]-=cx;
-		pmat[13]-=cy;
-		pmat[14]-=cz;
-		
-		glLoadMatrixf(pmat);
-
-		zoom= dx > dy ? dx : dy;
-		resizeGL(size.width(),size.height());
 	}
+	if (xmin>xmax) xmin=xmax=0;
+	if (ymin>ymax) ymin=ymax=0;
+
+	float cx=(xmin+xmax)*0.5;
+	float cy=(ymin+ymax)*0.5;
+	float cz=(zmin+zmax)*0.5;
+	float dx=(xmax-xmin)*0.5;
+	float dy=(ymax-ymin)*0.5;
+	pmat[12]-=cx;
+	pmat[13]-=cy;
+	pmat[14]-=cz;
+		
+	glLoadMatrixf(pmat);
+
+	zoom= dx > dy ? dx : dy;
+	resizeGL(size.width(),size.height());
+
 
 	/*
 TODO: Must correct the fixView Algorithm
@@ -451,6 +460,8 @@ int processHits (GLint hits, GLuint buffer[])
 
 int GLWidget::pickGrid(int x1,int y1,int x2,int y2)
 {
+#if 0
+	/*TODO*/
 	if (geom && geom->grids.length()) {
 		int x=(x1+x2)/2;
 		int y=(y1+y2)/2;
@@ -523,6 +534,8 @@ int GLWidget::pickGrid(int x1,int y1,int x2,int y2)
 		
 		return ret;
 	} else return -1;
+#endif
+	return -1;
 }
 
 
@@ -530,7 +543,7 @@ void GLWidget::paintGL()
 {
 	
 
-	float ww=3.14159/180.;
+	float ww=3.14159f/180.f;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	glEnable(GL_LIGHTING);
@@ -602,84 +615,87 @@ void GLWidget::paintGL()
 	glVertex3dv(pnt);
 	glEnd();
 
-	if (geom) {
-                unsigned int k,k1;
-		
-		glEnable(GL_LIGHTING);
+	for (int i=0; i<geomlist.count(); i++) {
+		Geometry *geom = geomlist.at(i);
+			
+		if (geom->visible) {
+			glEnable(GL_LIGHTING);
 
-		if (geom->hasSmoothNormals) {
-			glShadeModel(GL_SMOOTH);
-		}
-		glColor3f(.7,.6,.4);
-		glBegin(GL_TRIANGLES);
-		float *norm,*norm1;
+			if (geom->hasSmoothNormals) {
+				glShadeModel(GL_SMOOTH);
+			}
+			glColor3f(.7f,.6f,.4f);
+			glBegin(GL_TRIANGLES);
+			float *norm,*norm1;
 
-		float cosf;
+			float cosf;
 		
 		
-		for (k=0; k<geom->triangles.length(); k++) {
-			norm1=geom->triangles.at(k).normal.data;
-			if (!geom->hasSmoothNormals) {
-				glNormal3fv(norm1);
-				for (k1=0; k1<3; k1++) {
-					glVertex3fv(geom->grids.at(geom->triangles.at(k).node[k1]).coords);
-				}
-			} else {
-				for (k1=0; k1<3; k1++) {
-					norm=geom->triangles.at(k).cnormal[k1].data;
-					cosf=norm[0]*norm1[0]+norm[1]*norm1[1]+norm[2]*norm1[2];
-					if (1 || (cosf>-.94 && cosf<.94)) {
-						glNormal3fv(norm1);
-					} else {
-						glNormal3fv(norm);
+			for (int k=0; k<geom->triangles.length(); k++) {
+				norm1=geom->triangles.at(k).normal.data;
+				if (!geom->hasSmoothNormals) {
+					glNormal3fv(norm1);
+					for (int k1=0; k1<3; k1++) {
+						glVertex3fv(geom->grids.at(geom->triangles.at(k).node[k1]).coords);
 					}
-					glVertex3fv(geom->grids.at(geom->triangles.at(k).node[k1]).coords);
+				} else {
+					for (int k1=0; k1<3; k1++) {
+						norm=geom->triangles.at(k).cnormal[k1].data;
+						cosf=norm[0]*norm1[0]+norm[1]*norm1[1]+norm[2]*norm1[2];
+						if (1 || (cosf>-.94 && cosf<.94)) {
+							glNormal3fv(norm1);
+						} else {
+							glNormal3fv(norm);
+						}
+						glVertex3fv(geom->grids.at(geom->triangles.at(k).node[k1]).coords);
+					}
 				}
 			}
-		}
 		
-		glEnd();
-
-		glShadeModel(GL_FLAT);
-
-		geom->drawRevolveLines();
-		geom->drawBSplineSurfs();
-
-		glDisable(GL_LIGHTING);
-
-		
-		/*The lines should be a bit closer to viewer*/
-		glMatrixMode (GL_MODELVIEW);
-		glPushMatrix();
-		glTranslatef(pmat02*5e-3*zoom,pmat12*5e-3*zoom,pmat22*5e-3*zoom);
-
-
-		geom->drawEdgeStrip();
-		geom->drawLineStrip();
-		geom->drawCircles();
-		geom->drawArcs();
-		geom->drawSplines();
-		geom->drawBSplines();
-		geom->drawArcEllipses();
-		geom->drawArcHyperbolas();
-
-
-		glPointSize(4);
-		glBegin(GL_POINTS);
-		for (k=0; k<geom->points.length(); k++) {
-			glVertex3fv(geom->grids.at(geom->points.at(k)).coords);
-		}
-		glEnd();
-
-		if (geom->pickedGrid!=-1) {
-			glBegin(GL_POINTS);
-			glVertex3fv(geom->grids.at(geom->pickedGrid).coords);
 			glEnd();
+
+			glShadeModel(GL_FLAT);
+
+			geom->drawRevolveLines();
+			geom->drawBSplineSurfs();
+
+			glDisable(GL_LIGHTING);
+
+		
+			/*The lines should be a bit closer to viewer*/
+			glMatrixMode (GL_MODELVIEW);
+			glPushMatrix();
+			glTranslatef(pmat02*5e-3*zoom,pmat12*5e-3*zoom,pmat22*5e-3*zoom);
+
+
+			geom->drawEdgeStrip();
+			geom->drawLineStrip();
+			geom->drawCircles();
+			geom->drawArcs();
+			geom->drawSplines();
+			geom->drawBSplines();
+			geom->drawArcEllipses();
+			geom->drawArcHyperbolas();
+
+
+			glPointSize(4);
+			glBegin(GL_POINTS);
+			for (int k=0; k<geom->points.length(); k++) {
+				glVertex3fv(geom->grids.at(geom->points.at(k)).coords);
+			}
+			glEnd();
+
+			if (geom->pickedGrid!=-1) {
+				glBegin(GL_POINTS);
+				glVertex3fv(geom->grids.at(geom->pickedGrid).coords);
+				glEnd();
+			}
+
+			glPointSize(1);
+
+			glPopMatrix();
+
 		}
-
-		glPointSize(1);
-
-		glPopMatrix();
 
 	}
 	

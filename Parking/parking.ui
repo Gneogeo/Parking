@@ -40,6 +40,7 @@
     <property name="title">
      <string>Window</string>
     </property>
+    <addaction name="actionGeometries"/>
    </widget>
    <addaction name="menuHello"/>
    <addaction name="menuWindow"/>
@@ -83,6 +84,11 @@
   <action name="action_LoadOBJ">
    <property name="text">
     <string>Load OBJ</string>
+   </property>
+  </action>
+  <action name="actionGeometries">
+   <property name="text">
+    <string>Geometries</string>
    </property>
   </action>
  </widget>
