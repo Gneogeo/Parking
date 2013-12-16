@@ -134,7 +134,7 @@ public:
 	int *lineStrip;
 	int *triaStripVertex;
 	int *triaStripElement;
-
+	
 	void makeEdgeStrip();
 	void makeLineStrip();
 	void makeTriaStrip();

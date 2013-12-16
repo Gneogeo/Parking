@@ -246,28 +246,11 @@ void GLWidget::fixView()
 		
 	for (int k0=0; k0<geomlist.count(); k0++) {
 		Geometry *geom = geomlist.at(k0);
-		for (i=0; i<geom->grids.length(); i++) {
-			float *pvec,vec[3];
-			pvec=geom->grids.at(i).coords;
+		if (geom->visible) {
+			for (i=0; i<geom->grids.length(); i++) {
+				float *pvec,vec[3];
+				pvec=geom->grids.at(i).coords;
 
-			vec[0]=pvec[0]*pmat[0]+pvec[1]*pmat[4]+pvec[2]*pmat[8]+pmat[12];
-			vec[1]=pvec[0]*pmat[1]+pvec[1]*pmat[5]+pvec[2]*pmat[9]+pmat[13];
-			vec[2]=pvec[0]*pmat[2]+pvec[1]*pmat[6]+pvec[2]*pmat[10]+pmat[14];
-
-			xmin = vec[0]<xmin ? vec[0] : xmin;
-			xmax = vec[0]>xmax ? vec[0] : xmax;
-			ymin = vec[1]<ymin ? vec[1] : ymin;
-			ymax = vec[1]>ymax ? vec[1] : ymax;
-			zmin = vec[2]<zmin ? vec[2] : zmin;
-			zmax = vec[2]>zmax ? vec[2] : zmax;
-
-		}
-
-		for (i=0; i<geom->bsplines.length(); i++) {
-			float *pvec,vec[3];
-			const BSpline &BS=geom->bsplines.at(i);
-			for (j=0; j<BS.total_coords; j++) {
-				pvec=BS.coords[j];
 				vec[0]=pvec[0]*pmat[0]+pvec[1]*pmat[4]+pvec[2]*pmat[8]+pmat[12];
 				vec[1]=pvec[0]*pmat[1]+pvec[1]*pmat[5]+pvec[2]*pmat[9]+pmat[13];
 				vec[2]=pvec[0]*pmat[2]+pvec[1]*pmat[6]+pvec[2]*pmat[10]+pmat[14];
@@ -278,24 +261,43 @@ void GLWidget::fixView()
 				ymax = vec[1]>ymax ? vec[1] : ymax;
 				zmin = vec[2]<zmin ? vec[2] : zmin;
 				zmax = vec[2]>zmax ? vec[2] : zmax;
+
 			}
-		}
 
-		for (i=0; i<geom->bsplinesurfs.length(); i++) {
-			float *pvec,vec[3];
-			const BSplineSurf &BSS=geom->bsplinesurfs.at(i);
-			for (j=0; j<BSS.total_coords; j++) {
-				pvec=BSS.coords[j];
-				vec[0]=pvec[0]*pmat[0]+pvec[1]*pmat[4]+pvec[2]*pmat[8]+pmat[12];
-				vec[1]=pvec[0]*pmat[1]+pvec[1]*pmat[5]+pvec[2]*pmat[9]+pmat[13];
-				vec[2]=pvec[0]*pmat[2]+pvec[1]*pmat[6]+pvec[2]*pmat[10]+pmat[14];
+			for (i=0; i<geom->bsplines.length(); i++) {
+				float *pvec,vec[3];
+				const BSpline &BS=geom->bsplines.at(i);
+				for (j=0; j<BS.total_coords; j++) {
+					pvec=BS.coords[j];
+					vec[0]=pvec[0]*pmat[0]+pvec[1]*pmat[4]+pvec[2]*pmat[8]+pmat[12];
+					vec[1]=pvec[0]*pmat[1]+pvec[1]*pmat[5]+pvec[2]*pmat[9]+pmat[13];
+					vec[2]=pvec[0]*pmat[2]+pvec[1]*pmat[6]+pvec[2]*pmat[10]+pmat[14];
 
-				xmin = vec[0]<xmin ? vec[0] : xmin;
-				xmax = vec[0]>xmax ? vec[0] : xmax;
-				ymin = vec[1]<ymin ? vec[1] : ymin;
-				ymax = vec[1]>ymax ? vec[1] : ymax;
-				zmin = vec[2]<zmin ? vec[2] : zmin;
-				zmax = vec[2]>zmax ? vec[2] : zmax;
+					xmin = vec[0]<xmin ? vec[0] : xmin;
+					xmax = vec[0]>xmax ? vec[0] : xmax;
+					ymin = vec[1]<ymin ? vec[1] : ymin;
+					ymax = vec[1]>ymax ? vec[1] : ymax;
+					zmin = vec[2]<zmin ? vec[2] : zmin;
+					zmax = vec[2]>zmax ? vec[2] : zmax;
+				}
+			}
+
+			for (i=0; i<geom->bsplinesurfs.length(); i++) {
+				float *pvec,vec[3];
+				const BSplineSurf &BSS=geom->bsplinesurfs.at(i);
+				for (j=0; j<BSS.total_coords; j++) {
+					pvec=BSS.coords[j];
+					vec[0]=pvec[0]*pmat[0]+pvec[1]*pmat[4]+pvec[2]*pmat[8]+pmat[12];
+					vec[1]=pvec[0]*pmat[1]+pvec[1]*pmat[5]+pvec[2]*pmat[9]+pmat[13];
+					vec[2]=pvec[0]*pmat[2]+pvec[1]*pmat[6]+pvec[2]*pmat[10]+pmat[14];
+
+					xmin = vec[0]<xmin ? vec[0] : xmin;
+					xmax = vec[0]>xmax ? vec[0] : xmax;
+					ymin = vec[1]<ymin ? vec[1] : ymin;
+					ymax = vec[1]>ymax ? vec[1] : ymax;
+					zmin = vec[2]<zmin ? vec[2] : zmin;
+					zmax = vec[2]>zmax ? vec[2] : zmax;
+				}
 			}
 		}
 	}
@@ -625,12 +627,14 @@ void GLWidget::paintGL()
 				glShadeModel(GL_SMOOTH);
 			}
 			glColor3f(.7f,.6f,.4f);
-			glBegin(GL_TRIANGLES);
+			
 			float *norm,*cnorm;
 
 			float cosf;
+
+
 		
-		
+			glBegin(GL_TRIANGLES);
 			for (int k=0; k<geom->triangles.length(); k++) {
 				Triangle *tria;
 				tria = &geom->triangles.at(k);
@@ -653,8 +657,9 @@ void GLWidget::paintGL()
 					}
 				}
 			}
-		
 			glEnd();
+
+			
 
 			glShadeModel(GL_FLAT);
 

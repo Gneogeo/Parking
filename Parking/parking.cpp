@@ -28,6 +28,12 @@ parking::parking(QWidget *parent, Qt::WFlags flags)
 	geometries=new Q_Geometries(this);
 	bsplinesurf=new Q_BSplineSurf(this);
 
+	
+	geometries->setFeatures(QDockWidget::AllDockWidgetFeatures);
+	addDockWidget(Qt::LeftDockWidgetArea, geometries);
+	geometries->hide();
+	
+
 #if 0
 	bsplinesurf->setFeatures(QDockWidget::AllDockWidgetFeatures);
 	addDockWidget(Qt::LeftDockWidgetArea, bsplinesurf);

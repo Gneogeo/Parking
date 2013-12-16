@@ -31,7 +31,7 @@ Geometry::Geometry()
 	lineStrip=NULL;
 	triaStripVertex=NULL;
 	triaStripElement=NULL;
-
+	
 	edgeStripColor[0]=0;
 	edgeStripColor[1]=0;
 	edgeStripColor[2]=0;
@@ -50,6 +50,7 @@ Geometry::~Geometry()
 {
 	free(edgeStrip);
 	free(lineStrip);
+	
 }
 
 
@@ -966,7 +967,8 @@ void Geometry::drawEdgeStrip()
 		}
 #else
 		glEnableClientState(GL_VERTEX_ARRAY);
-                glVertexPointer(3,GL_FLOAT,sizeof(Grid),&grids.at(0).coords);
+        glVertexPointer(3,GL_FLOAT,sizeof(Grid),&grids.at(0).coords);
+
 
 		while (ar[0]) {
 			totta=ar[0]; ar++;

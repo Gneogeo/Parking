@@ -1,8 +1,8 @@
 #include "q_bsplinesurf.h"
 #include "geometry.h"
 
-Q_BSplineSurf::Q_BSplineSurf(QWidget *parent, Qt::WFlags flags)
-{
+Q_BSplineSurf::Q_BSplineSurf(QWidget *parent, Qt::WFlags flags) : QDockWidget(parent) 
+{  
 	ui.setupUi(this);
 
 }
