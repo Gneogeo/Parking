@@ -32,7 +32,6 @@ class Triangle {
 public:
 	int node[3];
 	vector3d<float> normal;
-	vector3d<float> cnormal[3];
 };
 
 
@@ -76,6 +75,7 @@ public:
 	myVector<int> points;
 	myVector<Line> lines;
 	myVector<Triangle> triangles;
+	myVector< vector3d<float> >smooth_normals;
 	myVector<Line> edges;
 	myVector<Circle> circles;
 	myVector<ArcCircle> arcs;

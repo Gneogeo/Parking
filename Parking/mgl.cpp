@@ -626,26 +626,28 @@ void GLWidget::paintGL()
 			}
 			glColor3f(.7f,.6f,.4f);
 			glBegin(GL_TRIANGLES);
-			float *norm,*norm1;
+			float *norm,*cnorm;
 
 			float cosf;
 		
 		
 			for (int k=0; k<geom->triangles.length(); k++) {
-				norm1=geom->triangles.at(k).normal.data;
+				Triangle *tria;
+				tria = &geom->triangles.at(k);
+				norm=tria->normal.data;
 				if (!geom->hasSmoothNormals) {
-					glNormal3fv(norm1);
+					glNormal3fv(norm);
 					for (int k1=0; k1<3; k1++) {
-						glVertex3fv(geom->grids.at(geom->triangles.at(k).node[k1]).coords);
+						glVertex3fv(geom->grids.at(tria->node[k1]).coords);
 					}
 				} else {
 					for (int k1=0; k1<3; k1++) {
-						norm=geom->triangles.at(k).cnormal[k1].data;
-						cosf=norm[0]*norm1[0]+norm[1]*norm1[1]+norm[2]*norm1[2];
+						cnorm=geom->smooth_normals.at( tria->node[k1] ).data;
+						cosf=norm[0]*cnorm[0]+norm[1]*cnorm[1]+norm[2]*cnorm[2];
 						if (1 || (cosf>-.94 && cosf<.94)) {
-							glNormal3fv(norm1);
-						} else {
 							glNormal3fv(norm);
+						} else {
+							glNormal3fv(cnorm);
 						}
 						glVertex3fv(geom->grids.at(geom->triangles.at(k).node[k1]).coords);
 					}

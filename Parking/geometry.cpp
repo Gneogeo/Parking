@@ -273,6 +273,9 @@ void Geometry::calcTrianglesSmoothNormals()
 
 	vector3d<float> cnormal;
 
+	smooth_normals.truncate();
+
+
 	for (k=0; k<grids.length(); k++) {
 		cnormal.zero();
 		for (k1=0; k1<trianglesPerGrid[k]; k1++) {
@@ -283,18 +286,7 @@ void Geometry::calcTrianglesSmoothNormals()
 		float s=sqrtf(norm[0]*norm[0]+norm[1]*norm[1]+norm[2]*norm[2]);
 		cnormal.scale(1./s);
 		
-
-		int j;
-		for (k1=0; k1<trianglesPerGrid[k]; k1++) {
-                        tria=&triangles.at(trianglesOnGrid[k][k1]);
-			j=-1;
-			if (tria->node[0]==k) j=0;
-			else if (tria->node[1]==k) j=1;
-			else if (tria->node[2]==k) j=2;
-			if (j!=-1) {
-				tria->cnormal[j].copy(cnormal);
-			}
-		}
+		smooth_normals.append(cnormal);
 	}
 
 	delete []globalTrianglesOnGrid;
@@ -587,6 +579,7 @@ void Geometry::loadOBJ(char *name)
 
 	//compressGrids();
 	calcTrianglesNormals();
+
 
 	recalcEdge((float)30*3.14159/180.);
 
