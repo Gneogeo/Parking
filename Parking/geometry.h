@@ -132,8 +132,8 @@ public:
 
 	int *edgeStrip;
 	int *lineStrip;
-	int *triaStripVertex;
-	int *triaStripElement;
+	myVector<int> triaStripVertex;
+	myVector<int> triaStripElement;
 	
 	void makeEdgeStrip();
 	void makeLineStrip();

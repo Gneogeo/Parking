@@ -29,8 +29,6 @@ Geometry::Geometry()
 
 	edgeStrip=NULL;
 	lineStrip=NULL;
-	triaStripVertex=NULL;
-	triaStripElement=NULL;
 	
 	edgeStripColor[0]=0;
 	edgeStripColor[1]=0;
@@ -839,15 +837,14 @@ void Geometry::makeLineStrip()
 
 void Geometry::makeTriaStrip()
 {
-	return;
 	/*TODO Not ready yet*/
 	clock_t t=clock();
-	free(triaStripVertex); triaStripVertex=0;
-	free(triaStripElement); triaStripElement=0;
+	triaStripVertex.truncate();
+	triaStripElement.truncate();
 
 
 	/*Edge calculation*/
-	int k,rp;
+	int k,k1,rp;
 	int edge_len=3*triangles.length();
 	Edge *edge=(Edge *)malloc(edge_len*sizeof(Edge));
 	
@@ -857,19 +854,19 @@ void Geometry::makeTriaStrip()
 		edge[edge_len].nod[0]=triangles.at(k).node[0];
 		edge[edge_len].nod[1]=triangles.at(k).node[1];
 		edge[edge_len].elem[0]=k;
-		edge[edge_len].elem[1]=-1;
+		edge[edge_len].elem[1]=0;
 		edge_len++;
 
 		edge[edge_len].nod[0]=triangles.at(k).node[1];
 		edge[edge_len].nod[1]=triangles.at(k).node[2];
 		edge[edge_len].elem[0]=k;
-		edge[edge_len].elem[1]=-1;
+		edge[edge_len].elem[1]=1;
 		edge_len++;
 
 		edge[edge_len].nod[0]=triangles.at(k).node[2];
 		edge[edge_len].nod[1]=triangles.at(k).node[0];
 		edge[edge_len].elem[0]=k;
-		edge[edge_len].elem[1]=-1;
+		edge[edge_len].elem[1]=2;
 		edge_len++;
 	}
 
@@ -881,57 +878,113 @@ void Geometry::makeTriaStrip()
 		}
 	}
 	qsort(edge,edge_len,sizeof(Edge),compareEdge);
-	rp=0;
-	for (k=1; k<edge_len; k++) {
-		if (edge[k].nod[0]==edge[rp].nod[0] &&
-			edge[k].nod[1]==edge[rp].nod[1]) {
-				edge[rp].elem[1]=edge[k].elem[0];
-		} else {
-			rp++;
-			edge[rp].nod[0]=edge[k].nod[0];
-			edge[rp].nod[1]=edge[k].nod[1];
-			edge[rp].elem[0]=edge[k].elem[0];
-			edge[rp].elem[1]=edge[k].elem[1];
-		}
-	}
-
-	int ARR[200],ARR_E[200];
 	
+
 	int (*conn)[3];
-	int *connLen;
-	conn=(int (*)[3])malloc(triangles.length()*sizeof(int[3]));
-	connLen=(int *)calloc(triangles.length(),sizeof(int));
+	conn=(int (*)[3])calloc(triangles.length(),sizeof(int[3]));
 
-	int el1,el2;
-	for (k=0; k<edge_len; k++) {
-		el1=edge[k].elem[0];
-		el2=edge[k].elem[1];
-		if (el1!=-1) {
-			conn[el1][connLen[el1]]=el2;
-			connLen[el1]++;
-		}
-		if (el2!=-1) {
-			conn[el2][connLen[el2]]=el1;
-			connLen[el2]++;
-		}
-	}
+	char (*connEdge)[3];
+	connEdge = (char (*)[3]) calloc(triangles.length(),sizeof(char[3]));
 
-	int k0;
-	k0=0;
+	k=0;
 	for (;;) {
-		while (k0<triangles.length() && connLen[k0]==0) {
-			k0++;
+		if (k+1>=edge_len) break;
+		if (edge[k].nod[0]==edge[k+1].nod[0] &&
+			edge[k].nod[1]==edge[k+1].nod[1]) {
+				conn[ edge[k].elem[0] ][ edge[k].elem[1] ]= edge[k+1].elem[0];
+				conn[ edge[k+1].elem[0] ] [ edge[k+1].elem[1] ]= edge[k].elem[0];
+				connEdge[edge[k].elem[0] ][ edge[k].elem[1] ]= edge[k+1].elem[1];
+				connEdge[ edge[k+1].elem[0] ] [ edge[k+1].elem[1] ]= edge[k].elem[1];
+				k+=2;
+		} else {
+			k++;
 		}
-		if (k0==triangles.length()) break;
-
-		
-
 	}
 
-	free(connLen);
-	free(conn);
+	free(edge); edge = 0;
 
-	free(edge);
+	char *usedTriangle = (char*) calloc(triangles.length(),sizeof(char));
+
+	
+	int ARR[200],ARR_E[200];
+	int arrlen;
+	k=0;
+	for (;;) {
+		for (k1=k; k1<triangles.length(); k1++) {
+			if (usedTriangle[k1]==0) break;
+		}
+		k=k1+1;
+		if (k1==triangles.length()) break;
+		
+		arrlen=0;
+
+		Triangle *tria;
+		
+		int inp_side, out_side;
+
+		/*Choose a starting side*/
+		inp_side = 0; out_side = 1;
+		if (usedTriangle[ conn[k1][out_side] ]==1) {
+			inp_side = 1; out_side = 2;
+			if (usedTriangle[ conn[k1][out_side] ]==1) {
+				inp_side = 2; out_side = 1;
+			}
+		}
+
+		tria = &triangles.at(k1);
+		usedTriangle[k1]=1;
+		ARR[arrlen]=tria->node[inp_side]; ARR_E[arrlen]=k1; arrlen++;
+		ARR[arrlen]=tria->node[inp_side+1<3 ? inp_side+1: inp_side-2]; ARR_E[arrlen]=k1; arrlen++;
+		ARR[arrlen]=tria->node[inp_side+2<3 ? inp_side+2: inp_side-1]; ARR_E[arrlen]=k1; arrlen++;
+
+		QSet<int> stripnode;
+		stripnode.insert(ARR[0]);
+		stripnode.insert(ARR[1]);
+		stripnode.insert(ARR[2]);
+		for (;;) {
+
+			int k2;
+			k2 = conn[k1][out_side];
+			inp_side = connEdge[k1][out_side];
+			k1 = k2;
+			if (usedTriangle[k1]==1) break;
+			if (arrlen>=180) break;
+
+			tria = &triangles.at(k1);
+			usedTriangle[k1]=1;
+			if (arrlen & 1) {
+				out_side = inp_side-1;
+				if (out_side==-1) out_side=2;
+			} else {
+				out_side = inp_side+1;
+				if (out_side==3) out_side=0;
+			}
+			if (inp_side ==0) {
+				ARR[arrlen]=tria->node[2];
+			} else if (inp_side ==1) {
+				ARR[arrlen]=tria->node[0];
+			} else {
+				ARR[arrlen]=tria->node[1];
+			}
+			ARR_E[arrlen]=k1;
+
+			if (stripnode.contains( ARR[arrlen] )) break;
+			stripnode.insert( ARR[arrlen]);
+			arrlen++;
+		}
+		triaStripVertex.append(arrlen);
+		triaStripElement.append(arrlen);
+		for (int k2=0; k2<arrlen; k2++) {
+			triaStripVertex.append(ARR[k2]);
+			triaStripElement.append(ARR_E[k2]);
+		}
+	}
+	triaStripVertex.append(0);
+	triaStripElement.append(0);
+	free(usedTriangle);
+	free(connEdge);
+	free(conn);
+	
 
 	qDebug("Time to triangle strip: %f msec",(clock()-t)/(CLOCKS_PER_SEC/1000.));
 }

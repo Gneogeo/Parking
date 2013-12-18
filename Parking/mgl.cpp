@@ -7,6 +7,7 @@
 #include <GL/glu.h>
 
 #include <math.h>
+#include <ctime>
 #include "mgl.h"
 
 #include "geometry.h"
@@ -543,7 +544,7 @@ int GLWidget::pickGrid(int x1,int y1,int x2,int y2)
 
 void GLWidget::paintGL()
 {
-	
+	clock_t t=clock();
 
 	float ww=3.14159f/180.f;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -633,7 +634,7 @@ void GLWidget::paintGL()
 			float cosf;
 
 
-		
+#if 0		
 			glBegin(GL_TRIANGLES);
 			for (int k=0; k<geom->triangles.length(); k++) {
 				Triangle *tria;
@@ -659,7 +660,31 @@ void GLWidget::paintGL()
 			}
 			glEnd();
 
+#else
+			int *vert_ar = &geom->triaStripVertex.at(0);
+			int *elem_ar = &geom->triaStripElement.at(0);
+			float (*normstrip)[3]=0;
+			normstrip = (float(*)[3]) malloc(geom->grids.length()*sizeof(float[3]));
+			glEnableClientState(GL_VERTEX_ARRAY);
+			glVertexPointer(3,GL_FLOAT,sizeof(Grid),&geom->grids.at(0).coords);
+			glEnableClientState(GL_NORMAL_ARRAY);
+			glNormalPointer(GL_FLOAT,0,normstrip);
 			
+			while (vert_ar[0]) {
+				int total_ar=vert_ar[0]; vert_ar++; elem_ar++;
+				
+				for (int k=0; k<total_ar; k++) {
+					memcpy(normstrip[vert_ar[k]],geom->triangles.at(elem_ar[k]).normal.data,sizeof(float[3]));
+				}
+				
+								
+				glDrawElements(GL_TRIANGLE_STRIP,total_ar,GL_UNSIGNED_INT,vert_ar);
+				
+				vert_ar+=total_ar;
+				elem_ar+=total_ar;
+			}
+			free(normstrip);
+#endif
 
 			glShadeModel(GL_FLAT);
 
@@ -705,5 +730,8 @@ void GLWidget::paintGL()
 		}
 
 	}
+
+	float frame_time = (clock()-t)/(CLOCKS_PER_SEC/1000.);
+	qDebug("FPS: %f",1000./frame_time);
 	
 }
